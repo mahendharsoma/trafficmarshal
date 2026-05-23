@@ -140,18 +140,23 @@ export default function GoogleMapView({
     if (!hotspots || !hotspots.length) return
     hotspots.forEach(h => {
       const pos = { lat: Number(h.lat), lng: Number(h.lng) }
+      const delay = Number(h.trafficDensity ?? h.congestion ?? 0)
+      const status = h.status || (delay >= 35 ? 'heavy' : delay >= 15 ? 'moderate' : 'clear')
+      const color = status === 'heavy' ? '#dc2626' : status === 'moderate' ? '#f59e0b' : '#16a34a'
+      const label = status === 'heavy' ? 'H' : status === 'moderate' ? 'M' : 'C'
+      const labelText = h.trafficDensity !== null && h.trafficDensity !== undefined ? `${label}` : String(h.incidentCount || 0)
+      const statusTitle = status === 'heavy' ? 'Heavy Traffic' : status === 'moderate' ? 'Moderate Traffic' : 'Clear Traffic'
       const circle = new google.maps.Circle({
         center: pos,
-        radius: 80,
-        strokeColor: h.severity === 'critical' ? '#dc2626' : h.severity === 'high' ? '#f97316' : '#10b981',
-        strokeWeight: 2,
-        fillColor: h.severity === 'critical' ? '#dc2626' : h.severity === 'high' ? '#f97316' : '#10b981',
-        fillOpacity: 0.18,
+        radius: status === 'heavy' ? 170 : status === 'moderate' ? 135 : 95,
+        strokeColor: color,
+        strokeWeight: 3,
+        fillColor: color,
+        fillOpacity: status === 'clear' ? 0.12 : 0.20,
         map: mapRef.current,
       })
-      const labelText = h.trafficDensity !== null ? `+${h.trafficDensity}` : String(h.incidentCount || 0)
-      const titleText = h.trafficDensity !== null
-        ? `Hotspot ${h.id} · +${h.trafficDensity}% delay`
+      const titleText = h.trafficDensity !== null && h.trafficDensity !== undefined
+        ? `${statusTitle} · ${delay}% delay`
         : `Hotspot ${h.id} · ${h.incidentCount} incident(s)`
       const marker = new google.maps.Marker({
         position: pos,
@@ -159,16 +164,27 @@ export default function GoogleMapView({
         title: titleText,
         label: { text: labelText, color: '#fff', fontSize: '12px', fontWeight: '700' },
         icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          fillColor: '#0000',
-          fillOpacity: 0,
-          strokeOpacity: 0,
-          scale: 0,
+          path: 'M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7z',
+          fillColor: color,
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 2,
+          scale: 1.5,
+          anchor: new google.maps.Point(12, 22),
+          labelOrigin: new google.maps.Point(12, 9),
         }
       })
       const clickFn = () => {
         if (onHotspotClick) onHotspotClick(h)
-        infoRef.current.setContent(`<div style="font-family:sans-serif;font-size:13px"><b>Hotspot</b><br/>${h.density} incident(s)</div>`)
+        infoRef.current.setContent(
+          `<div style="font-family:sans-serif;font-size:13px;max-width:240px">
+            <div style="font-weight:700;color:${color};font-size:14px">${statusTitle}</div>
+            <div style="margin-top:4px"><b>Delay:</b> ${h.trafficDensity !== null && h.trafficDensity !== undefined ? `${delay}%` : '-'}</div>
+            <div><b>Incidents:</b> ${h.incidentCount ?? h.density ?? 0}</div>
+            <div><b>Location:</b> ${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}</div>
+            <div style="margin-top:6px;color:#475569;font-size:12px">Click the location card for details or use Navigate to open Google Maps.</div>
+          </div>`
+        )
         infoRef.current.setPosition(pos)
         infoRef.current.open(mapRef.current)
       }
@@ -267,5 +283,19 @@ export default function GoogleMapView({
     )
   }
 
-  return <div ref={containerRef} style={{ height: '100%', width: '100%', minHeight: 400 }} />
+  return (
+    <div style={{ height: '100%', width: '100%', minHeight: 400, position: 'relative' }}>
+      <div ref={containerRef} style={{ height: '100%', width: '100%', minHeight: 400 }} />
+      {hotspots?.length > 0 && (
+        <div style={{ position: 'absolute', left: 12, bottom: 12, background: 'rgba(255,255,255,0.95)', borderRadius: 10, padding: '8px 10px', boxShadow: '0 6px 18px rgba(15,23,42,0.18)', fontFamily: 'sans-serif', fontSize: 12 }}>
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>Traffic Points</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <span><b style={{ color: '#dc2626' }}>H</b> Heavy</span>
+            <span><b style={{ color: '#f59e0b' }}>M</b> Moderate</span>
+            <span><b style={{ color: '#16a34a' }}>C</b> Clear</span>
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }

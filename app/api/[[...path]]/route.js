@@ -315,6 +315,7 @@ const err = (message, status = 400) => NextResponse.json({ error: message }, { s
 // ----- ROW MAPPERS -----
 const marshalRow = (r) => ({
   id: r.id, userId: r.user_id, name: r.name, role: r.role, zone: r.zone,
+  tpsId: r.tps_id || null,
   status: r.status, points: r.points,
   currentLocation: { type: 'Point', coordinates: [Number(r.lng), Number(r.lat)] },
   lastUpdated: r.last_updated,
@@ -341,7 +342,7 @@ const alertRow = (r) => ({
 const familyRow = (r) => ({
   id: r.id, familyCode: r.family_code, seniorName: r.senior_name, age: r.age,
   gender: r.gender, mobile: r.mobile, altContact: r.alt_contact,
-  address: r.address, landmark: r.landmark, psId: r.ps_id, dcpId: r.dcp_id, zone: r.zone,
+  address: r.address, landmark: r.landmark, psId: r.ps_id, tpsId: r.tps_id || r.ps_id, dcpId: r.dcp_id, zone: r.zone,
   emergencyContactName: r.emergency_contact_name, emergencyContactPhone: r.emergency_contact_phone,
   medicalConditions: r.medical_conditions, doctorName: r.doctor_name,
   hospitalName: r.hospital_name, medicationNotes: r.medication_notes,
@@ -1118,8 +1119,23 @@ async function handle(request) {
       const dcpId = searchParams.get('dcpId');
       let sql = 'SELECT * FROM senior_families';
       const wh = []; const args = [];
-      if (shoId) { wh.push('ps_id=?'); args.push(shoId); }
-      if (dcpId) { wh.push('dcp_id=?'); args.push(dcpId); }
+      if (shoId) {
+        const [[sho]] = await p.query('SELECT tps_id FROM users WHERE id=? AND role=?', [shoId, 'sho']);
+        if (!sho?.tps_id) return ok({ families: [] });
+        wh.push('(ps_id=? OR tps_id=?)'); args.push(sho.tps_id, sho.tps_id);
+      }
+      if (dcpId) {
+        const [zoneRows] = await p.query('SELECT zone_id FROM dcp_zones WHERE dcp_id=?', [dcpId]);
+        const zoneIds = zoneRows.map(r => r.zone_id);
+        if (!zoneIds.length) return ok({ families: [] });
+        const zPlace = zoneIds.map(() => '?').join(',');
+        const [tpsRows] = await p.query(`SELECT id FROM traffic_ps WHERE zone_id IN (${zPlace})`, zoneIds);
+        const tpsIds = tpsRows.map(t => t.id);
+        if (!tpsIds.length) return ok({ families: [] });
+        const tPlace = tpsIds.map(() => '?').join(',');
+        wh.push(`(ps_id IN (${tPlace}) OR tps_id IN (${tPlace}) OR dcp_id=?)`);
+        args.push(...tpsIds, ...tpsIds, dcpId);
+      }
       if (wh.length) sql += ' WHERE ' + wh.join(' AND ');
       sql += ' ORDER BY created_at DESC';
       const [rows] = await p.query(sql, args);
@@ -1130,14 +1146,32 @@ async function handle(request) {
       const [[{ c }]] = await p.query('SELECT COUNT(*) AS c FROM senior_families');
       const familyCode = `FAM-${String(c + 1).padStart(4, '0')}`;
       const b = body;
+      let psId = b.psId || null;
+      let tpsId = b.tpsId || b.psId || null;
+      let zoneName = b.zone || null;
+      if (b.createdBy) {
+        const [[creator]] = await p.query(
+          `SELECT u.role, u.tps_id, t.name AS tps_name, z.name AS zone_name
+           FROM users u
+           LEFT JOIN traffic_ps t ON t.id=u.tps_id
+           LEFT JOIN zones z ON z.id=t.zone_id
+           WHERE u.id=?`,
+          [b.createdBy]
+        );
+        if (creator?.role === 'sho' && creator?.tps_id) {
+          psId = creator.tps_id;
+          tpsId = creator.tps_id;
+          zoneName = creator.zone_name || zoneName;
+        }
+      }
       await p.query(
         `INSERT INTO senior_families
-         (id,family_code,senior_name,age,gender,mobile,alt_contact,address,landmark,ps_id,dcp_id,zone,
+         (id,family_code,senior_name,age,gender,mobile,alt_contact,address,landmark,ps_id,tps_id,dcp_id,zone,
           emergency_contact_name,emergency_contact_phone,medical_conditions,doctor_name,hospital_name,medication_notes,
           lat,lng,risk_category,created_by)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         [id, familyCode, b.seniorName, b.age || null, b.gender || null, b.mobile || null, b.altContact || null,
-         b.address || null, b.landmark || null, b.psId || null, b.dcpId || null, b.zone || null,
+         b.address || null, b.landmark || null, psId, tpsId, b.dcpId || null, zoneName,
          b.emergencyContactName || null, b.emergencyContactPhone || null, b.medicalConditions || null,
          b.doctorName || null, b.hospitalName || null, b.medicationNotes || null,
          b.lat || null, b.lng || null, b.riskCategory || 'low', b.createdBy || null]
@@ -1155,7 +1189,7 @@ async function handle(request) {
       const fields = {
         senior_name: b.seniorName, age: b.age, gender: b.gender, mobile: b.mobile,
         alt_contact: b.altContact, address: b.address, landmark: b.landmark,
-        ps_id: b.psId, dcp_id: b.dcpId, zone: b.zone,
+        ps_id: b.psId, tps_id: b.tpsId || b.psId, dcp_id: b.dcpId, zone: b.zone,
         emergency_contact_name: b.emergencyContactName, emergency_contact_phone: b.emergencyContactPhone,
         medical_conditions: b.medicalConditions, doctor_name: b.doctorName,
         hospital_name: b.hospitalName, medication_notes: b.medicationNotes,

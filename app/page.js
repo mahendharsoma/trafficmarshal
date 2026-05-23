@@ -43,11 +43,13 @@ async function api(path, opts = {}) {
 
   // Handle empty response
   if (!text) {
-    return null
+    return res.ok ? null : { error: `Request failed (${res.status})` }
   }
 
   try {
-    return JSON.parse(text)
+    const data = JSON.parse(text)
+    if (!res.ok && !data?.error) return { ...data, error: `Request failed (${res.status})` }
+    return data
   } catch (err) {
     console.error('Invalid JSON response:', { path: apiPath, status: res.status, text })
     throw new Error(`Server returned invalid JSON for ${apiPath}`)
@@ -163,12 +165,19 @@ function LoginScreen({ onLogin }) {
   const handleLogin = async (e) => {
     e.preventDefault()
     setLoading(true)
-    const r = await api('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) })
-    setLoading(false)
-    if (r.error) return toast.error(r.error)
-    localStorage.setItem('mksc_user', JSON.stringify(r.user))
-    onLogin(r.user)
-    toast.success(`Welcome ${r.user.name}`)
+    try {
+      const r = await api('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) })
+      if (!r) return toast.error('No response from server. Check database/API configuration.')
+      if (r.error) return toast.error(r.error)
+      if (!r.user) return toast.error('Login response missing user details')
+      localStorage.setItem('mksc_user', JSON.stringify(r.user))
+      onLogin(r.user)
+      toast.success(`Welcome ${r.user.name}`)
+    } catch (err) {
+      toast.error(err.message || 'Login failed')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const seed = async () => {
@@ -987,6 +996,8 @@ function MarshalDashboard({ user, onStaleUser }) {
 
         <ActivityReportCard onSubmit={submitActivity} />
 
+        <AssignedVisitsCard user={user} marshalInfo={me} />
+
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -1327,7 +1338,7 @@ function VolunteerDashboard({ user, onStaleUser }) {
   const [nearbyIncidents, setNearbyIncidents] = useState([])
   const [alerts, setAlerts] = useState([])
   const [stale, setStale] = useState(false)
-  const [radiusKm, setRadiusKm] = useState(1)
+  const [radiusKm, setRadiusKm] = useState(10)
 
   const updateFromCurrentGPS = async (showToast = false) => {
     if (!navigator.geolocation) {
@@ -1470,13 +1481,14 @@ function VolunteerDashboard({ user, onStaleUser }) {
                   <SelectItem value="1">1 km</SelectItem>
                   <SelectItem value="2">2 km</SelectItem>
                   <SelectItem value="5">5 km</SelectItem>
+                  <SelectItem value="10">10 km</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Siren className="h-4 w-4 text-red-600" /> Nearby Traffic Problems ({nearbyIncidents.length})</CardTitle><CardDescription>Based on your current GPS location</CardDescription></CardHeader>
+          <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Siren className="h-4 w-4 text-red-600" /> Nearby Traffic & Jam Areas ({nearbyIncidents.length})</CardTitle><CardDescription>Showing traffic problems within {radiusKm} km of your current GPS location</CardDescription></CardHeader>
           <CardContent className="space-y-2 max-h-[60vh] overflow-auto">
             {nearbyIncidents.length === 0 && <p className="text-sm text-slate-500">No incidents within {radiusKm} km. You'll be notified when one is reported nearby.</p>}
             {nearbyIncidents.map(i => {
@@ -2197,45 +2209,58 @@ function FamilyManagement({ user }) {
   const [assignFamily, setAssignFamily] = useState(null)
   const [assignForm, setAssignForm] = useState({ marshalId: '', visitFrequency: 'weekly', instructions: '' })
   const [filter, setFilter] = useState('all')
+  const [zones, setZones] = useState([])
+  const [tpsList, setTpsList] = useState([])
+  const [assignedTps, setAssignedTps] = useState(null)
 
   const load = async () => {
     try {
       const url = user.role === 'sho' ? `/families?shoId=${user.id}` : user.role === 'dcp' ? `/families?dcpId=${user.id}` : '/families'
-      const [f, m, a, v] = await Promise.all([
-        api(url), api('/marshals'), api('/assignments'), api('/visits'),
+      const areaUrl = user.role === 'sho' ? `/sho/${user.id}/tps` : user.role === 'dcp' ? `/dcp/${user.id}/tps` : '/tps'
+      const [f, m, a, v, area, allZones] = await Promise.all([
+        api(url), api('/marshals'), api('/assignments'), api('/visits'), api(areaUrl), user.role === 'super_admin' ? api('/zones') : Promise.resolve(null),
       ])
       setFamilies(f?.families || [])
       setMarshals(m?.marshals || [])
       setAssignments(a?.assignments || [])
       setVisits(v?.visits || [])
+      setZones(area?.zones || allZones?.zones || [])
+      setTpsList(area?.tps ? (Array.isArray(area.tps) ? area.tps : [area.tps]) : [])
+      setAssignedTps(area?.tps && !Array.isArray(area.tps) ? area.tps : null)
     } catch (e) { console.error('Families load', e) }
   }
   useEffect(() => { load(); const t = setInterval(load, 6000); return () => clearInterval(t) }, [])
 
   const empty = {
     seniorName: '', age: '', gender: 'male', mobile: '', altContact: '',
-    address: '', landmark: '', zone: 'Begumpet', riskCategory: 'low',
+    address: '', landmark: '', zone: '', zoneId: '', psId: '', tpsId: '', riskCategory: 'low',
     emergencyContactName: '', emergencyContactPhone: '',
     medicalConditions: '', doctorName: '', hospitalName: '', medicationNotes: '',
     lat: '', lng: '',
   }
   const [form, setForm] = useState(empty)
 
-  const openCreate = () => { setEditing(null); setForm(empty); setOpen(true) }
+  const openCreate = () => {
+    setEditing(null)
+    setForm(user.role === 'sho' && assignedTps ? { ...empty, zone: assignedTps.zoneName || '', zoneId: assignedTps.zoneId || '', psId: assignedTps.id, tpsId: assignedTps.id } : empty)
+    setOpen(true)
+  }
   const openEdit = (f) => {
     setEditing(f)
     setForm({
       ...empty, ...f,
-      age: f.age || '', lat: f.lat || '', lng: f.lng || '',
+      age: f.age || '', lat: f.lat || '', lng: f.lng || '', tpsId: f.tpsId || f.psId || '', psId: f.psId || f.tpsId || '',
     })
     setOpen(true)
   }
   const save = async () => {
     if (!form.seniorName) return toast.error('Senior name required')
+    const selectedTps = user.role === 'sho' ? assignedTps : tpsList.find(t => t.id === (form.tpsId || form.psId))
+    if (!selectedTps?.id) return toast.error('Select Traffic Police Station')
     const payload = { ...form, age: form.age ? parseInt(form.age) : null,
       lat: form.lat ? parseFloat(form.lat) : null, lng: form.lng ? parseFloat(form.lng) : null,
       createdBy: user.id, dcpId: user.role === 'dcp' ? user.id : (form.dcpId || null),
-      psId: user.role === 'sho' ? user.id : (form.psId || null),
+      psId: selectedTps.id, tpsId: selectedTps.id, zone: selectedTps.zoneName || form.zone,
     }
     if (editing) {
       const r = await api(`/families/${editing.id}`, { method: 'PATCH', body: JSON.stringify(payload) })
@@ -2272,6 +2297,8 @@ function FamilyManagement({ user }) {
   const riskColor = { low: 'bg-emerald-600', medium: 'bg-amber-500', high: 'bg-orange-600', emergency: 'bg-red-600' }
 
   const filtered = filter === 'all' ? families : families.filter(f => f.riskCategory === filter)
+  const availableTps = user.role === 'sho' ? (assignedTps ? [assignedTps] : []) : tpsList.filter(t => !form.zoneId || t.zoneId === form.zoneId || t.zone_id === form.zoneId)
+  const assignableMarshals = assignFamily ? marshals.filter(m => m.role === 'marshal' && (!assignFamily.tpsId || m.tpsId === assignFamily.tpsId || m.tpsId === assignFamily.psId)) : marshals.filter(m => m.role === 'marshal')
 
   return (
     <div className="space-y-3">
@@ -2279,7 +2306,7 @@ function FamilyManagement({ user }) {
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <div>
             <CardTitle className="flex items-center gap-2"><Heart className="h-5 w-5 text-pink-600" /> Senior Citizen Protection Program</CardTitle>
-            <CardDescription>{families.length} families · {assignments.length} active assignments</CardDescription>
+            <CardDescription>{families.length} families · {assignments.length} active assignments{user.role === 'sho' && assignedTps ? ` · ${assignedTps.name}` : ''}</CardDescription>
           </div>
           <div className="flex items-center gap-2">
             <Select value={filter} onValueChange={setFilter}>
@@ -2296,6 +2323,11 @@ function FamilyManagement({ user }) {
           </div>
         </CardHeader>
         <CardContent>
+          {user.role === 'sho' && assignedTps && (
+            <div className="mb-3 rounded-lg border bg-blue-50 px-3 py-2 text-xs text-blue-800">
+              Senior citizens created here are automatically mapped to your Traffic Police Station: <strong>{assignedTps.name}</strong>.
+            </div>
+          )}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
             {filtered.map(f => {
               const asg = familyAssignments(f.id)
@@ -2361,12 +2393,19 @@ function FamilyManagement({ user }) {
             <div><Label>Alternate Contact</Label><Input value={form.altContact} onChange={e => setForm({ ...form, altContact: e.target.value })} /></div>
             <div className="md:col-span-2"><Label>Address</Label><Input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} /></div>
             <div><Label>Landmark</Label><Input value={form.landmark} onChange={e => setForm({ ...form, landmark: e.target.value })} /></div>
-            <div><Label>Zone (PS Mapping)</Label>
-              <Select value={form.zone} onValueChange={v => setForm({ ...form, zone: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+            <div><Label>Zone</Label>
+              <Select value={form.zoneId || ''} onValueChange={v => setForm({ ...form, zoneId: v, tpsId: '', psId: '', zone: zones.find(z => z.id === v)?.name || '' })} disabled={user.role === 'sho'}>
+                <SelectTrigger><SelectValue placeholder={assignedTps?.zoneName || 'Select zone'} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Begumpet">Begumpet</SelectItem><SelectItem value="Alwal">Alwal</SelectItem>
-                  <SelectItem value="Thirumalgiri">Thirumalgiri</SelectItem><SelectItem value="Uppal">Uppal</SelectItem>
+                  {zones.map(z => <SelectItem key={z.id} value={z.id}>{z.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>Traffic Police Station *</Label>
+              <Select value={(user.role === 'sho' ? assignedTps?.id : form.tpsId) || ''} onValueChange={v => setForm({ ...form, tpsId: v, psId: v })} disabled={user.role === 'sho'}>
+                <SelectTrigger><SelectValue placeholder={assignedTps?.name || 'Select Traffic PS'} /></SelectTrigger>
+                <SelectContent>
+                  {availableTps.map(t => <SelectItem key={t.id} value={t.id}>{t.name}{t.zoneName ? ` (${t.zoneName})` : ''}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -2409,7 +2448,7 @@ function FamilyManagement({ user }) {
                 <Select value={assignForm.marshalId} onValueChange={v => setAssignForm({ ...assignForm, marshalId: v })}>
                   <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
                   <SelectContent>
-                    {marshals.map(m => <SelectItem key={m.id} value={m.id}>{m.name} ({m.role})</SelectItem>)}
+                    {assignableMarshals.map(m => <SelectItem key={m.id} value={m.id}>{m.name} ({m.zone || 'Traffic Marshal'})</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -2886,7 +2925,16 @@ function App() {
     <div className="min-h-screen bg-slate-50">
       <AppHeader user={user} onLogout={logout} />
       <main className="max-w-7xl mx-auto p-4">
-        {user.role === 'sho' && <SHODashboard user={user} />}
+        {user.role === 'sho' && (
+          <Tabs defaultValue="traffic" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="traffic"><Siren className="h-4 w-4 mr-1" /> Traffic</TabsTrigger>
+              <TabsTrigger value="seniors"><Heart className="h-4 w-4 mr-1" /> Senior Citizens</TabsTrigger>
+            </TabsList>
+            <TabsContent value="traffic"><SHODashboard user={user} /></TabsContent>
+            <TabsContent value="seniors"><FamilyManagement user={user} /></TabsContent>
+          </Tabs>
+        )}
         {user.role === 'super_admin' && <AdminDashboard user={user} />}
         {user.role === 'dcp' && <DCPDashboard user={user} />}
         {user.role === 'marshal' && <MarshalDashboard user={user} onStaleUser={logout} />}
