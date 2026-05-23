@@ -23,6 +23,54 @@ const getNavUrl = (lat, lng) => `https://www.google.com/maps/dir/?api=1&destinat
 const TRAFFIC_PRIORITY = { heavy: 1, moderate: 2, clear: 3, unknown: 3 }
 const TRAFFIC_PRIORITY_LABEL = { 1: 'P1 — Extreme', 2: 'P2 — High', 3: 'P3 — Moderate' }
 const TRAFFIC_STATUS_LABEL = { heavy: 'HEAVY', moderate: 'MOD', clear: 'CLEAR', unknown: '—' }
+const TRAFFIC_SAMPLE_ROUTES = [
+  { dlat: 0.006, dlng: 0 }, { dlat: 0, dlng: 0.007 },
+  { dlat: -0.006, dlng: 0 }, { dlat: 0, dlng: -0.007 },
+  { dlat: 0.006, dlng: 0.007 }, { dlat: -0.006, dlng: -0.007 },
+]
+const isPointInsidePolygon = (point, polygon) => {
+  if (!point || !polygon || polygon.length < 3) return true
+  const x = Number(point.lng)
+  const y = Number(point.lat)
+  let inside = false
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const yi = Number(polygon[i][0])
+    const xi = Number(polygon[i][1])
+    const yj = Number(polygon[j][0])
+    const xj = Number(polygon[j][1])
+    const intersect = ((yi > y) !== (yj > y)) && (x < ((xj - xi) * (y - yi)) / (yj - yi) + xi)
+    if (intersect) inside = !inside
+  }
+  return inside
+}
+
+const getTrafficDuration = (google, dirSvc, lat, lng, route, trafficModel) => new Promise((resolve) => {
+  const origin = new google.maps.LatLng(lat, lng)
+  const destination = new google.maps.LatLng(lat + route.dlat, lng + route.dlng)
+  dirSvc.route({
+    origin,
+    destination,
+    travelMode: google.maps.TravelMode.DRIVING,
+    drivingOptions: {
+      departureTime: new Date(Date.now() + 2 * 60 * 1000),
+      trafficModel,
+    },
+    provideRouteAlternatives: false,
+  }, (result, status) => {
+    if (status !== 'OK' || !result?.routes?.[0]?.legs?.[0]) return resolve(null)
+    const leg = result.routes[0].legs[0]
+    resolve(leg.duration_in_traffic?.value || null)
+  })
+})
+
+const getTrafficDensityRatio = async (google, dirSvc, lat, lng, route) => {
+  const [optimistic, bestGuess] = await Promise.all([
+    getTrafficDuration(google, dirSvc, lat, lng, route, google.maps.TrafficModel.OPTIMISTIC),
+    getTrafficDuration(google, dirSvc, lat, lng, route, google.maps.TrafficModel.BEST_GUESS),
+  ])
+  if (!optimistic || !bestGuess) return null
+  return Math.max(1, bestGuess / optimistic)
+}
 
 const MapView = dynamic(() => import('@/components/MapView'), { ssr: false, loading: () => <div className="h-full w-full flex items-center justify-center bg-slate-100">Loading map...</div> })
 
@@ -317,6 +365,13 @@ function SHODashboard({ user }) {
   }, [])
 
   const handleMapClick = (latlng) => {
+    if (zones?.[0]?.polygon?.length >= 3 && window.google?.maps?.geometry?.poly) {
+      const point = new window.google.maps.LatLng(latlng.lat, latlng.lng)
+      const polygon = new window.google.maps.Polygon({ paths: zones[0].polygon.map(p => ({ lat: Number(p[0]), lng: Number(p[1]) })) })
+      if (!window.google.maps.geometry.poly.containsLocation(point, polygon)) {
+        return toast.error('Select location inside your assigned Traffic Police Station area only')
+      }
+    }
     setPendingJam({ lat: latlng.lat, lng: latlng.lng })
     setDispatchInfo(null)
     toast.info('Jam location selected. Fill details and dispatch.')
@@ -364,19 +419,44 @@ function SHODashboard({ user }) {
 
   const cancelJam = () => { setPendingJam(null); setDispatchInfo(null); setNearestMarshals([]); setAssigningMarshalId('') }
 
-  // Traffic density grid: divide TPS area into 3x3 cells and compute incident density
+  const shoIncidents = useMemo(() => {
+    if (!assignedTps?.id) return []
+    const polygon = zones?.[0]?.polygon
+    return incidents.filter(i => {
+      const belongsToTps = i.tpsId === assignedTps.id || i.psId === assignedTps.id || i.reportedBy === user.id
+      if (!belongsToTps || !i.location) return false
+      return isPointInsidePolygon({ lat: i.location.coordinates[1], lng: i.location.coordinates[0] }, polygon)
+    })
+  }, [incidents, assignedTps, user.id, zones])
+
+  const shoMarshals = useMemo(() => {
+    if (!assignedTps?.id) return []
+    const polygon = zones?.[0]?.polygon
+    return marshals.filter(m => {
+      const belongsToTps = m.tpsId === assignedTps.id || m.zone === assignedTps.zoneName
+      const coords = m.currentLocation?.coordinates
+      return belongsToTps && (!coords || isPointInsidePolygon({ lat: coords[1], lng: coords[0] }, polygon))
+    })
+  }, [marshals, assignedTps, zones])
+
+  // Traffic density grid: divide TPS area into 5x5 cells and compute incident density
   const trafficGrid = useMemo(() => {
     const grid = []
-    const cellSize = 0.01 // ~1 km
+    const cellSize = 0.006
     if (!zones || zones.length === 0) return grid
-    const centerLat = zones[0]?.polygon?.[0]?.[0] || assignedTps?.lat || 17.45
-    const centerLng = zones[0]?.polygon?.[0]?.[1] || assignedTps?.lng || 78.52
-    for (let i = 0; i < 9; i++) {
-      const row = Math.floor(i / 3)
-      const col = i % 3
-      const lat = centerLat + (row - 1) * cellSize
-      const lng = centerLng + (col - 1) * cellSize
-      const incidentCount = incidents.filter(inc => inc.location && Math.abs(inc.location.coordinates[1] - lat) < cellSize / 2 && Math.abs(inc.location.coordinates[0] - lng) < cellSize / 2).length
+    const poly = zones[0]?.polygon
+    const center = poly?.length
+      ? poly.reduce((acc, p) => ({ lat: acc.lat + Number(p[0]) / poly.length, lng: acc.lng + Number(p[1]) / poly.length }), { lat: 0, lng: 0 })
+      : { lat: assignedTps?.lat || 17.45, lng: assignedTps?.lng || 78.52 }
+    const centerLat = center.lat
+    const centerLng = center.lng
+    for (let i = 0; i < 25; i++) {
+      const row = Math.floor(i / 5)
+      const col = i % 5
+      const lat = centerLat + (row - 2) * cellSize
+      const lng = centerLng + (col - 2) * cellSize
+      if (!isPointInsidePolygon({ lat, lng }, zones[0]?.polygon)) continue
+      const incidentCount = shoIncidents.filter(inc => inc.location && Math.abs(inc.location.coordinates[1] - lat) < cellSize / 2 && Math.abs(inc.location.coordinates[0] - lng) < cellSize / 2).length
       grid.push({
         id: i,
         lat,
@@ -388,7 +468,7 @@ function SHODashboard({ user }) {
       })
     }
     return grid
-  }, [incidents, zones, assignedTps])
+  }, [shoIncidents, zones, assignedTps])
 
   // Live traffic scan state (DirectionsService based)
   const [scanning, setScanning] = useState(false)
@@ -407,40 +487,27 @@ function SHODashboard({ user }) {
     try {
       const google = await getLoader(GMAPS_KEY)
       const dirSvc = new google.maps.DirectionsService()
-      const newCong = { ...congestionMap }
-      const newStatus = { ...statusMap }
+      const newCong = {}
+      const newStatus = {}
+      let unavailable = 0
       let done = 0
 
-      // Use fewer samples per cell and process in small concurrent batches
-      const routes = [
-        { dlat: 0.009, dlng: 0 },
-        { dlat: 0, dlng: 0.014 }
-      ] // reduced from 3 -> 2 samples
       const concurrency = 4
 
       const processCell = async (cell, globalIdx) => {
         const key = `${cell.lat},${cell.lng}`
-        const ratios = []
-        await Promise.all(routes.map(route => new Promise((res) => {
-          const origin = new google.maps.LatLng(cell.lat, cell.lng)
-          const dest = new google.maps.LatLng(cell.lat + route.dlat, cell.lng + route.dlng)
-          dirSvc.route({ origin, destination: dest, travelMode: google.maps.TravelMode.DRIVING, drivingOptions: { departureTime: new Date(), trafficModel: google.maps.TrafficModel.BEST_GUESS } }, (result, status) => {
-            if (status === 'OK' && result && result.routes && result.routes[0]) {
-              const leg = result.routes[0].legs[0]
-              const normal = leg.duration?.value || leg.duration_in_traffic?.value || 1
-              const withTr = leg.duration_in_traffic?.value || normal
-              const ratio = normal > 0 ? withTr / normal : 1
-              ratios.push(ratio)
-            } else {
-              ratios.push(1)
-            }
-            res()
-          })
-        })))
+        const samples = await Promise.all(TRAFFIC_SAMPLE_ROUTES.map(route => getTrafficDensityRatio(google, dirSvc, cell.lat, cell.lng, route)))
+        const ratios = samples.filter(v => typeof v === 'number')
+        if (!ratios.length) {
+          unavailable++
+          done++
+          setScanProgress({ done, total: trafficGrid.length })
+          return
+        }
         const average = ratios.reduce((a, b) => a + b, 0) / ratios.length
         newCong[key] = average
-        if (average >= 1.4) newStatus[key] = 'heavy'
-        else if (average >= 1.2) newStatus[key] = 'moderate'
+        if (average >= 1.12) newStatus[key] = 'heavy'
+        else if (average >= 1.04) newStatus[key] = 'moderate'
         else newStatus[key] = 'clear'
         done++
         setScanProgress({ done, total: trafficGrid.length })
@@ -457,7 +524,7 @@ function SHODashboard({ user }) {
       setStatusMap(newStatus)
       setLastScanAt(new Date())
       const heavyCount = Object.values(newStatus).filter(s => s === 'heavy').length
-      toast.success(`Scan complete — ${heavyCount} heavy, ${Object.values(newStatus).filter(s => s === 'moderate').length} moderate`)
+      toast.success(`Live vehicle movement scan complete — ${heavyCount} heavy, ${Object.values(newStatus).filter(s => s === 'moderate').length} moderate${unavailable ? `, ${unavailable} unavailable` : ''}`)
     } catch (e) {
       console.error('Scan error', e)
       toast.error('Traffic scan failed')
@@ -466,7 +533,7 @@ function SHODashboard({ user }) {
   }
 
   // derive hotspots passed to map: prefer live scan status if available
-  const hotspotsForMap = trafficGrid.map(c => {
+  const hotspotsForMap = (trafficGrid || []).map(c => {
     const key = `${c.lat},${c.lng}`
     const ratio = congestionMap[key]
     const trafficDensity = typeof ratio === 'number' ? Math.max(0, Math.round((ratio - 1) * 100)) : null
@@ -507,10 +574,7 @@ function SHODashboard({ user }) {
   }).sort((a,b) => b.density - a.density)
   const heavyTrafficPlaces = hotspotsForMap.filter(c => c.status === 'heavy').sort((a, b) => b.density - a.density)
   const mapCenter = assignedTps?.lat && assignedTps?.lng ? { lat: assignedTps.lat, lng: assignedTps.lng } : { lat: 17.45, lng: 78.52 }
-  const visibleIncidents = useMemo(() => {
-    if (!assignedTps?.id) return incidents
-    return incidents.filter(i => i.tpsId === assignedTps.id || i.psId === assignedTps.id || i.reportedBy === user.id)
-  }, [incidents, assignedTps, user.id])
+  const visibleIncidents = shoIncidents
   const navigateToGrid = (lat, lng) => {
     window.open(getNavUrl(lat, lng), '_blank')
   }
@@ -533,7 +597,7 @@ function SHODashboard({ user }) {
           focus={mapFocus}
           hotspots={visibleHotspots}
           onHotspotClick={selectTrafficGrid}
-          families={marshals.map(m => ({ lat: m.currentLocation.coordinates[1], lng: m.currentLocation.coordinates[0], seniorName: m.name, riskCategory: m.status, familyCode: m.id }))}
+          families={shoMarshals.map(m => ({ lat: m.currentLocation.coordinates[1], lng: m.currentLocation.coordinates[0], seniorName: m.name, riskCategory: m.status, familyCode: m.id }))}
           onMapClick={handleMapClick}
           dispatchHighlight={dispatchInfo || (pendingJam ? { ...pendingJam, level: 0 } : null)}
           center={mapCenter}
@@ -551,7 +615,7 @@ function SHODashboard({ user }) {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2"><Siren className="h-5 w-5 text-red-600" /> Mark Traffic Jam</CardTitle>
-            <CardDescription>Click anywhere on the map to mark a jam location.</CardDescription>
+            <CardDescription>Only your assigned Traffic Police Station area is shown. Mark jams inside this boundary.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {!pendingJam && <p className="text-sm text-slate-500">No location selected. Click on the map.</p>}
@@ -1880,30 +1944,22 @@ function DCPDashboard({ user }) {
       const dirSvc = new google.maps.DirectionsService()
       const newCong = {}
       const newStatus = {}
+      let unavailable = 0
       let done = 0
-      const routes = [{ dlat: 0.009, dlng: 0 }, { dlat: 0, dlng: 0.014 }]
       const processCell = async (cell) => {
         const key = `${cell.lat},${cell.lng}`
-        const ratios = []
-        await Promise.all(routes.map(route => new Promise((res) => {
-          const origin = new google.maps.LatLng(cell.lat, cell.lng)
-          const dest = new google.maps.LatLng(cell.lat + route.dlat, cell.lng + route.dlng)
-          dirSvc.route({ origin, destination: dest, travelMode: google.maps.TravelMode.DRIVING, drivingOptions: { departureTime: new Date(), trafficModel: google.maps.TrafficModel.BEST_GUESS } }, (result, status) => {
-            if (status === 'OK' && result?.routes?.[0]) {
-              const leg = result.routes[0].legs[0]
-              const normal = leg.duration?.value || leg.duration_in_traffic?.value || 1
-              const withTraffic = leg.duration_in_traffic?.value || normal
-              ratios.push(normal > 0 ? withTraffic / normal : 1)
-            } else {
-              ratios.push(1)
-            }
-            res()
-          })
-        })))
+        const samples = await Promise.all(TRAFFIC_SAMPLE_ROUTES.map(route => getTrafficDensityRatio(google, dirSvc, cell.lat, cell.lng, route)))
+        const ratios = samples.filter(v => typeof v === 'number')
+        if (!ratios.length) {
+          unavailable++
+          done++
+          setTrafficScanProgress({ done, total: dcpTrafficGrid.length })
+          return
+        }
         const average = ratios.reduce((a, b) => a + b, 0) / ratios.length
         newCong[key] = average
-        if (average >= 1.4) newStatus[key] = 'heavy'
-        else if (average >= 1.2) newStatus[key] = 'moderate'
+        if (average >= 1.12) newStatus[key] = 'heavy'
+        else if (average >= 1.04) newStatus[key] = 'moderate'
         else newStatus[key] = 'clear'
         done++
         setTrafficScanProgress({ done, total: dcpTrafficGrid.length })
@@ -1915,7 +1971,7 @@ function DCPDashboard({ user }) {
       setTrafficCongestionMap(newCong)
       setTrafficStatusMap(newStatus)
       setTrafficLastScanAt(new Date())
-      toast.success(`DCP traffic scan complete — ${Object.values(newStatus).filter(s => s === 'heavy').length} heavy, ${Object.values(newStatus).filter(s => s === 'moderate').length} moderate`)
+      toast.success(`DCP vehicle movement scan complete — ${Object.values(newStatus).filter(s => s === 'heavy').length} heavy, ${Object.values(newStatus).filter(s => s === 'moderate').length} moderate${unavailable ? `, ${unavailable} unavailable` : ''}`)
     } catch (e) {
       console.error('DCP traffic scan error', e)
       toast.error('DCP traffic scan failed')
