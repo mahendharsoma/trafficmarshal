@@ -588,8 +588,34 @@ function SHODashboard({ user }) {
   }
 
   return (
-    <div className="grid xl:grid-cols-[minmax(0,1fr),420px] lg:grid-cols-[minmax(0,1fr),380px] gap-4 min-h-[calc(100vh-130px)]">
-      <div className="relative rounded-xl overflow-hidden border shadow-sm h-[55vh] min-h-[420px] lg:h-auto">
+    <div className="space-y-4">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-900 to-blue-800 text-white shadow-xl">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.12),transparent_60%)]" />
+        <div className="relative px-4 sm:px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.22em] text-indigo-200 font-semibold">Traffic SHO Live Desk</div>
+            <div className="text-xl sm:text-2xl font-extrabold mt-1">{assignedTps?.name || 'Assigned Traffic PS'}</div>
+            <div className="text-xs text-indigo-200 mt-1">{assignedTps?.zoneName || user.zone || '-'} · Real-time jam dispatch and density scan</div>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-xs w-full sm:w-auto">
+            <div className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-center">
+              <div className="text-[10px] text-indigo-200">Marshals</div>
+              <div className="font-bold text-base">{shoMarshals.length}</div>
+            </div>
+            <div className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-center">
+              <div className="text-[10px] text-indigo-200">Incidents</div>
+              <div className="font-bold text-base">{visibleIncidents.length}</div>
+            </div>
+            <div className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-center">
+              <div className="text-[10px] text-indigo-200">Heavy</div>
+              <div className="font-bold text-base">{heavyCount}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid xl:grid-cols-[minmax(0,1fr),420px] lg:grid-cols-[minmax(0,1fr),380px] gap-4 min-h-[calc(100vh-170px)]">
+      <div className="relative rounded-xl overflow-hidden border shadow-sm h-[54vw] min-h-[340px] max-h-[620px] lg:h-auto lg:max-h-none">
         <GoogleMapView
           apiKey={GMAPS_KEY}
           incidents={visibleIncidents}
@@ -611,8 +637,8 @@ function SHODashboard({ user }) {
           <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-red-600" /> Jam</span>
         </div>
       </div>
-      <div className="space-y-3 overflow-auto lg:max-h-[calc(100vh-130px)] pr-0 lg:pr-1">
-        <Card>
+      <div className="space-y-3 overflow-auto lg:max-h-[calc(100vh-170px)] pr-0 lg:pr-1">
+        <Card className="border-0 shadow-sm bg-white/95 backdrop-blur">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2"><Siren className="h-5 w-5 text-red-600" /> Mark Traffic Jam</CardTitle>
             <CardDescription>Only your assigned Traffic Police Station area is shown. Mark jams inside this boundary.</CardDescription>
@@ -677,18 +703,18 @@ function SHODashboard({ user }) {
             )}
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-slate-900 to-indigo-950 text-white">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Traffic Scan Summary</CardTitle>
             <CardDescription>Live Google traffic analytics inside your mapped police station area</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="rounded-lg border bg-slate-50 p-3">
+            <div className="rounded-lg border border-white/10 bg-white/5 p-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className="text-xs text-slate-500">Mapped Area</div>
-                  <div className="text-sm font-semibold">{assignedTps?.name || 'Assigned Traffic PS'}</div>
-                  <div className="text-xs text-slate-500">{assignedTps?.zoneName || user.zone || '-'}</div>
+                  <div className="text-xs text-indigo-300">Mapped Area</div>
+                  <div className="text-sm font-semibold text-white">{assignedTps?.name || 'Assigned Traffic PS'}</div>
+                  <div className="text-xs text-indigo-300">{assignedTps?.zoneName || user.zone || '-'}</div>
                 </div>
                 <Badge className={liveTrafficStatus === 'Heavy congestion' ? 'bg-red-600' : liveTrafficStatus === 'Moderate congestion' ? 'bg-amber-500' : liveTrafficStatus === 'Clear traffic' ? 'bg-emerald-600' : 'bg-slate-500'}>
                   {liveTrafficStatus}
@@ -696,51 +722,51 @@ function SHODashboard({ user }) {
               </div>
               <div className="grid grid-cols-3 gap-2 mt-3 text-center text-xs">
                 <div>
-                  <div className="font-bold text-slate-800">{scannedRatios.length}</div>
-                  <div className="text-slate-500">Grids scanned</div>
+                  <div className="font-bold text-white">{scannedRatios.length}</div>
+                  <div className="text-indigo-300">Grids scanned</div>
                 </div>
                 <div>
-                  <div className="font-bold text-slate-800">+{avgDelayPct}%</div>
-                  <div className="text-slate-500">Avg delay</div>
+                  <div className="font-bold text-white">+{avgDelayPct}%</div>
+                  <div className="text-indigo-300">Avg delay</div>
                 </div>
                 <div>
-                  <div className="font-bold text-slate-800">+{maxDelayPct}%</div>
-                  <div className="text-slate-500">Max delay</div>
+                  <div className="font-bold text-white">+{maxDelayPct}%</div>
+                  <div className="text-indigo-300">Max delay</div>
                 </div>
               </div>
-              <div className="text-[10px] text-slate-400 mt-2">
+              <div className="text-[10px] text-indigo-300 mt-2">
                 Last scan: {lastScanAt ? lastScanAt.toLocaleString('en-IN') : 'Not scanned yet'}
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-lg border bg-red-50 p-2">
-                <div className="text-lg font-bold text-red-700">{heavyCount}</div>
-                <div className="text-[10px] text-red-700">Heavy</div>
+              <div className="rounded-lg border border-red-500/25 bg-red-500/15 p-2">
+                <div className="text-lg font-bold text-red-300">{heavyCount}</div>
+                <div className="text-[10px] text-red-300">Heavy</div>
               </div>
-              <div className="rounded-lg border bg-amber-50 p-2">
-                <div className="text-lg font-bold text-amber-700">{moderateCount}</div>
-                <div className="text-[10px] text-amber-700">Moderate</div>
+              <div className="rounded-lg border border-amber-500/25 bg-amber-500/15 p-2">
+                <div className="text-lg font-bold text-amber-300">{moderateCount}</div>
+                <div className="text-[10px] text-amber-300">Moderate</div>
               </div>
-              <div className="rounded-lg border bg-emerald-50 p-2">
-                <div className="text-lg font-bold text-emerald-700">{clearCount}</div>
-                <div className="text-[10px] text-emerald-700">Clear</div>
+              <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/15 p-2">
+                <div className="text-lg font-bold text-emerald-300">{clearCount}</div>
+                <div className="text-[10px] text-emerald-300">Clear</div>
               </div>
             </div>
             <div>
-              <div className="text-xs font-semibold mb-2">Current Heavy Traffic Places</div>
+              <div className="text-xs font-semibold mb-2 text-indigo-200">Current Heavy Traffic Places</div>
               <div className="space-y-2 max-h-36 overflow-auto">
                 {heavyTrafficPlaces.map(c => (
-                  <button key={c.id} type="button" onClick={() => selectTrafficGrid(c)} className="w-full text-left rounded-lg border bg-red-50 px-3 py-2 text-xs hover:bg-red-100">
+                  <button key={c.id} type="button" onClick={() => selectTrafficGrid(c)} className="w-full text-left rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs hover:bg-red-500/20">
                     <div className="font-semibold text-red-700">🚨 Grid #{c.id + 1}</div>
-                    <div className="text-slate-600">Lat: {c.lat.toFixed(6)}, Lng: {c.lng.toFixed(6)}{c.trafficDensity !== null ? ` (${c.trafficDensity}% delay)` : ''}</div>
+                    <div className="text-indigo-100">Lat: {c.lat.toFixed(6)}, Lng: {c.lng.toFixed(6)}{c.trafficDensity !== null ? ` ({c.trafficDensity}% delay)` : ''}</div>
                   </button>
                 ))}
-                {!heavyTrafficPlaces.length && <div className="text-center text-xs text-slate-500 py-4">No heavy traffic detected. Run a scan to check.</div>}
+                {!heavyTrafficPlaces.length && <div className="text-center text-xs text-indigo-300 py-4">No heavy traffic detected. Run a scan to check.</div>}
               </div>
             </div>
           </CardContent>
         </Card>
-          <Card>
+          <Card className="border-0 shadow-sm bg-white/95 backdrop-blur">
             <CardHeader className="pb-3">
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
@@ -789,7 +815,7 @@ function SHODashboard({ user }) {
               {!visibleHotspots.length && <div className="text-xs text-slate-500">No hotspots detected</div>}
             </CardContent>
           </Card>
-        <Card>
+        <Card className="border-0 shadow-sm bg-white/95 backdrop-blur">
           <CardHeader className="pb-3"><CardTitle className="text-base">Recent Incidents</CardTitle></CardHeader>
           <CardContent className="space-y-2 max-h-72 overflow-auto">
             {visibleIncidents.slice(0, 10).map(i => (
@@ -808,6 +834,7 @@ function SHODashboard({ user }) {
           </CardContent>
         </Card>
       </div>
+    </div>
     </div>
   )
 }
@@ -1031,8 +1058,30 @@ function MarshalDashboard({ user, onStaleUser }) {
   }
 
   return (
-    <div className="grid lg:grid-cols-[1fr,400px] gap-4 h-[calc(100vh-130px)]">
-      <div className="relative rounded-xl overflow-hidden border shadow-sm">
+    <div className="space-y-4">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-emerald-900 to-teal-700 text-white shadow-xl">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.14),transparent_60%)]" />
+        <div className="relative px-4 sm:px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.22em] text-emerald-200 font-semibold">Marshal Field Command</div>
+            <div className="text-xl sm:text-2xl font-extrabold mt-1">{me.name}</div>
+            <div className="text-xs text-emerald-100 mt-1">{me.zone} · {me.role.toUpperCase()} · {me.points} pts</div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-xs w-full sm:w-auto">
+            <div className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-center">
+              <div className="text-[10px] text-emerald-200">Status</div>
+              <div className="font-bold text-base">{me.status.toUpperCase()}</div>
+            </div>
+            <div className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-center">
+              <div className="text-[10px] text-emerald-200">Alerts</div>
+              <div className="font-bold text-base">{alerts.length}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    <div className="grid lg:grid-cols-[1fr,400px] gap-4 h-[calc(100vh-170px)] min-h-[620px]">
+      <div className="relative rounded-xl overflow-hidden border shadow-sm h-[54vw] min-h-[340px] max-h-[620px] lg:h-auto lg:max-h-none">
         <GoogleMapView
           apiKey={GMAPS_KEY}
           incidents={incidents}
@@ -1042,8 +1091,8 @@ function MarshalDashboard({ user, onStaleUser }) {
           zoom={14}
         />
       </div>
-      <div className="space-y-3 overflow-auto">
-        <Card className={statusBg}>
+      <div className="space-y-3 overflow-auto lg:max-h-[calc(100vh-170px)]">
+        <Card className={`${statusBg} shadow-sm border-2`}>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center justify-between">
               <span>Status: <span className="font-bold">{me.status.toUpperCase()}</span></span>
@@ -1062,7 +1111,7 @@ function MarshalDashboard({ user, onStaleUser }) {
 
         <AssignedVisitsCard user={user} marshalInfo={me} />
 
-        <Card>
+        <Card className="border-0 shadow-sm bg-white/95 backdrop-blur">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Siren className="h-4 w-4 text-red-600" /> Active Dispatch Requests ({alerts.length})
@@ -1077,7 +1126,7 @@ function MarshalDashboard({ user, onStaleUser }) {
               const steps = ['pending', 'accepted', 'reached', 'under_control']
               const curIdx = steps.indexOf(a.status)
               return (
-                <div key={a.id} className="border-2 border-red-200 bg-red-50 rounded-lg p-3 space-y-2">
+                <div key={a.id} className="border-2 border-red-200 bg-red-50 rounded-xl p-3 space-y-2 shadow-sm">
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="font-bold text-red-700 flex items-center gap-1"><AlertTriangle className="h-4 w-4" /> Level {a.level} · {a.distanceKm} km away</div>
@@ -1133,6 +1182,7 @@ function MarshalDashboard({ user, onStaleUser }) {
           </CardContent>
         </Card>
       </div>
+    </div>
     </div>
   )
 }
@@ -1202,29 +1252,31 @@ function UserManagementTab() {
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <div>
-            <CardTitle className="text-base">User Management</CardTitle>
-            <CardDescription>Role-based mapping: Super Admin & Volunteer (no mapping), DCP (Zones), SHO/Marshal (Zone + TPS)</CardDescription>
-          </div>
-          <div className="flex items-center gap-2">
-            <Select value={filter} onValueChange={setFilter}>
-              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="super_admin">Super Admin</SelectItem>
-                <SelectItem value="dcp">DCP</SelectItem>
-                <SelectItem value="sho">Traffic SHO</SelectItem>
-                <SelectItem value="marshal">Marshal</SelectItem>
-                <SelectItem value="volunteer">Volunteer</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button onClick={openCreate}><UserPlus className="h-4 w-4 mr-1" /> Add User</Button>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div>
+              <CardTitle className="text-base">User Management</CardTitle>
+              <CardDescription>Role-based mapping: Super Admin &amp; Volunteer (no mapping), DCP (Zones), SHO/Marshal (Zone + TPS)</CardDescription>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Select value={filter} onValueChange={setFilter}>
+                <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Roles</SelectItem>
+                  <SelectItem value="super_admin">Super Admin</SelectItem>
+                  <SelectItem value="dcp">DCP</SelectItem>
+                  <SelectItem value="sho">Traffic SHO</SelectItem>
+                  <SelectItem value="marshal">Marshal</SelectItem>
+                  <SelectItem value="volunteer">Volunteer</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button className="w-full sm:w-auto" onClick={openCreate}><UserPlus className="h-4 w-4 mr-1" /> Add User</Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-auto max-h-[60vh]">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto max-h-[60vh]">
+            <table className="w-full text-sm min-w-[640px]">
               <thead className="text-left bg-slate-100 sticky top-0">
                 <tr>
                   <th className="p-2">Username</th>
@@ -1260,12 +1312,12 @@ function UserManagementTab() {
       </Card>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
+        <DialogContent className="max-w-lg w-full max-h-[90vh] flex flex-col">
+          <DialogHeader className="shrink-0">
             <DialogTitle>{editing ? 'Edit User' : 'Create User'}</DialogTitle>
             <DialogDescription>{editing ? 'Update user role mapping and contact details.' : 'Create a new user with role and mapping.'}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 pr-1">
             <div>
               <Label>Username</Label>
               <Input value={form.username} disabled={!!editing} onChange={e => setForm({ ...form, username: e.target.value })} />
@@ -1339,7 +1391,7 @@ function UserManagementTab() {
               <Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="shrink-0 pt-2 border-t">
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
             <Button onClick={save}>{editing ? 'Save Changes' : 'Create User'}</Button>
           </DialogFooter>
@@ -1505,8 +1557,30 @@ function VolunteerDashboard({ user, onStaleUser }) {
   )
 
   return (
-    <div className="grid lg:grid-cols-[1fr,400px] gap-4 h-[calc(100vh-130px)]">
-      <div className="rounded-xl overflow-hidden border shadow-sm relative">
+    <div className="space-y-4">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-blue-900 to-cyan-700 text-white shadow-xl">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.12),transparent_60%)]" />
+        <div className="relative px-4 sm:px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.22em] text-cyan-200 font-semibold">Volunteer Rapid Assist</div>
+            <div className="text-xl sm:text-2xl font-extrabold mt-1">{user.name}</div>
+            <div className="text-xs text-cyan-100 mt-1">GPS-based nearby incident discovery and first response support</div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-xs w-full sm:w-auto">
+            <div className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-center">
+              <div className="text-[10px] text-cyan-200">Nearby</div>
+              <div className="font-bold text-base">{nearbyIncidents.length}</div>
+            </div>
+            <div className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-center">
+              <div className="text-[10px] text-cyan-200">Points</div>
+              <div className="font-bold text-base">{me?.points || 0}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    <div className="grid lg:grid-cols-[1fr,400px] gap-4 h-[calc(100vh-170px)] min-h-[620px]">
+      <div className="rounded-xl overflow-hidden border shadow-sm relative h-[54vw] min-h-[340px] max-h-[620px] lg:h-auto lg:max-h-none">
         {position ? (
           <GoogleMapView apiKey={GMAPS_KEY} incidents={nearbyIncidents}
             focus={{ lat: position.lat, lng: position.lng, zoom: 15 }}
@@ -1519,8 +1593,8 @@ function VolunteerDashboard({ user, onStaleUser }) {
           </div>
         )}
       </div>
-      <div className="overflow-auto space-y-3">
-        <Card className={me?.status === 'active' ? 'bg-green-50 border-green-300' : me?.status === 'online' ? 'bg-blue-50 border-blue-300' : 'bg-slate-100'}>
+      <div className="overflow-auto space-y-3 lg:max-h-[calc(100vh-170px)]">
+        <Card className={`${me?.status === 'active' ? 'bg-green-50 border-green-300' : me?.status === 'online' ? 'bg-blue-50 border-blue-300' : 'bg-slate-100'} shadow-sm border-2`}>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center justify-between text-base">
               <span>{user.name}</span>
@@ -1551,7 +1625,7 @@ function VolunteerDashboard({ user, onStaleUser }) {
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-0 shadow-sm bg-white/95 backdrop-blur">
           <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Siren className="h-4 w-4 text-red-600" /> Nearby Traffic & Jam Areas ({nearbyIncidents.length})</CardTitle><CardDescription>Showing traffic problems within {radiusKm} km of your current GPS location</CardDescription></CardHeader>
           <CardContent className="space-y-2 max-h-[60vh] overflow-auto">
             {nearbyIncidents.length === 0 && <p className="text-sm text-slate-500">No incidents within {radiusKm} km. You'll be notified when one is reported nearby.</p>}
@@ -1559,7 +1633,7 @@ function VolunteerDashboard({ user, onStaleUser }) {
               const al = alerts.find(a => a.incidentId === i.id)
               const lat = i.location.coordinates[1], lng = i.location.coordinates[0]
               return (
-                <div key={i.id} className="border-2 border-amber-200 bg-amber-50 rounded-lg p-3 space-y-2">
+                <div key={i.id} className="border-2 border-amber-200 bg-amber-50 rounded-xl p-3 space-y-2 shadow-sm">
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="font-bold">{i.address}</div>
@@ -1588,6 +1662,7 @@ function VolunteerDashboard({ user, onStaleUser }) {
         </Card>
       </div>
     </div>
+    </div>
   )
 }
 
@@ -1614,14 +1689,15 @@ function AuditLogsTab() {
   }
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
+      <CardHeader>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
           <CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5" /> Audit Logs</CardTitle>
           <CardDescription>Complete activity trail across the system</CardDescription>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Select value={filterRole || 'all'} onValueChange={v => setFilterRole(v === 'all' ? '' : v)}>
-            <SelectTrigger className="w-40"><SelectValue placeholder="All Roles" /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-40"><SelectValue placeholder="All Roles" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Roles</SelectItem>
               <SelectItem value="super_admin">Super Admin</SelectItem>
@@ -1631,12 +1707,13 @@ function AuditLogsTab() {
               <SelectItem value="volunteer">Volunteer</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" onClick={download}><FileText className="h-4 w-4 mr-1" /> Export CSV</Button>
+          <Button variant="outline" className="w-full sm:w-auto" onClick={download}><FileText className="h-4 w-4 mr-1" /> Export CSV</Button>
+        </div>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="overflow-auto max-h-[65vh]">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto max-h-[65vh]">
+          <table className="w-full text-sm min-w-[640px]">
             <thead className="bg-slate-100 sticky top-0">
               <tr className="text-left"><th className="p-2">Time</th><th className="p-2">Actor</th><th className="p-2">Role</th><th className="p-2">Action</th><th className="p-2">Target</th><th className="p-2">Details</th></tr>
             </thead>
@@ -1786,27 +1863,29 @@ function TrafficPSTab() {
         <Button onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> Add Traffic PS</Button>
       </CardHeader>
       <CardContent>
-        <table className="w-full text-sm">
-          <thead className="bg-slate-100 text-left">
-            <tr><th className="p-2">Name</th><th className="p-2">Zone</th><th className="p-2">Address</th><th className="p-2">Coordinates</th><th className="p-2">Polygon</th><th className="p-2 text-right">Actions</th></tr>
-          </thead>
-          <tbody>
-            {tpsList.map(t => (
-              <tr key={t.id} className="border-b">
-                <td className="p-2 font-medium">{t.name}</td>
-                <td className="p-2"><Badge variant="outline">{t.zoneName}</Badge></td>
-                <td className="p-2 text-xs">{t.address || '-'}</td>
-                <td className="p-2 text-xs font-mono">{t.lat ? `${t.lat.toFixed(4)}, ${t.lng.toFixed(4)}` : '-'}</td>
-                <td className="p-2"><Badge variant={polygonCount(t.polygon) > 2 ? 'default' : 'secondary'}>{polygonCount(t.polygon)} pts</Badge></td>
-                <td className="p-2 text-right">
-                  <Button size="sm" variant="ghost" onClick={() => openEdit(t)}><Pencil className="h-3 w-3" /></Button>
-                  <Button size="sm" variant="ghost" onClick={() => del(t)}><Trash2 className="h-3 w-3 text-red-600" /></Button>
-                </td>
-              </tr>
-            ))}
-            {!tpsList.length && <tr><td colSpan="6" className="text-center py-6 text-slate-500">No traffic police stations.</td></tr>}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[580px]">
+            <thead className="bg-slate-100 text-left">
+              <tr><th className="p-2">Name</th><th className="p-2">Zone</th><th className="p-2">Address</th><th className="p-2">Coordinates</th><th className="p-2">Polygon</th><th className="p-2 text-right">Actions</th></tr>
+            </thead>
+            <tbody>
+              {tpsList.map(t => (
+                <tr key={t.id} className="border-b">
+                  <td className="p-2 font-medium">{t.name}</td>
+                  <td className="p-2"><Badge variant="outline">{t.zoneName}</Badge></td>
+                  <td className="p-2 text-xs">{t.address || '-'}</td>
+                  <td className="p-2 text-xs font-mono">{t.lat ? `${t.lat.toFixed(4)}, ${t.lng.toFixed(4)}` : '-'}</td>
+                  <td className="p-2"><Badge variant={polygonCount(t.polygon) > 2 ? 'default' : 'secondary'}>{polygonCount(t.polygon)} pts</Badge></td>
+                  <td className="p-2 text-right">
+                    <Button size="sm" variant="ghost" onClick={() => openEdit(t)}><Pencil className="h-3 w-3" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => del(t)}><Trash2 className="h-3 w-3 text-red-600" /></Button>
+                  </td>
+                </tr>
+              ))}
+              {!tpsList.length && <tr><td colSpan="6" className="text-center py-6 text-slate-500">No traffic police stations.</td></tr>}
+            </tbody>
+          </table>
+        </div>
       </CardContent>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -2017,176 +2096,216 @@ function DCPDashboard({ user }) {
 
   return (
     <Tabs defaultValue="live" className="space-y-4">
-      <TabsList>
-        <TabsTrigger value="live"><Radio className="h-4 w-4 mr-1" /> Live Monitoring</TabsTrigger>
-        <TabsTrigger value="analytics"><BarChart3 className="h-4 w-4 mr-1" /> Analytics</TabsTrigger>
-        <TabsTrigger value="seniors"><Heart className="h-4 w-4 mr-1" /> Senior Citizens</TabsTrigger>
-        <TabsTrigger value="escalations"><Bell className="h-4 w-4 mr-1" /> Escalations</TabsTrigger>
-      </TabsList>
+      <div className="overflow-x-auto pb-1">
+        <TabsList className="w-max h-auto">
+          <TabsTrigger value="live" className="text-xs sm:text-sm"><Radio className="h-3.5 w-3.5 mr-1" /><span className="hidden sm:inline">Live </span>Monitoring</TabsTrigger>
+          <TabsTrigger value="analytics" className="text-xs sm:text-sm"><BarChart3 className="h-3.5 w-3.5 mr-1" />Analytics</TabsTrigger>
+          <TabsTrigger value="seniors" className="text-xs sm:text-sm"><Heart className="h-3.5 w-3.5 mr-1" />Seniors</TabsTrigger>
+          <TabsTrigger value="escalations" className="text-xs sm:text-sm"><Bell className="h-3.5 w-3.5 mr-1" /><span className="hidden sm:inline">Escalations</span><span className="sm:hidden">Esc.</span></TabsTrigger>
+        </TabsList>
+      </div>
 
-      <TabsContent value="live" className="space-y-3">
-        <Card className="bg-indigo-50 border-indigo-200">
-          <CardContent className="p-4 flex items-center justify-between flex-wrap gap-3">
+      <TabsContent value="live" className="space-y-4">
+        {/* ── Premium jurisdiction banner ── */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-900 via-indigo-700 to-blue-800 text-white shadow-xl">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.08),transparent_60%)]" />
+          <div className="relative px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <div className="text-xs uppercase tracking-wider text-indigo-700 font-semibold">Your Jurisdiction</div>
-              <div className="font-bold text-lg mt-1">{zones.map(z => z.name).join(' · ') || 'No zones assigned'}</div>
-              <div className="text-xs text-slate-600">{zones.length} zone(s) · {tpsList.length} Traffic Police Station(s)</div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="relative flex h-2.5 w-2.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" /><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-400" /></span>
+                <span className="text-[10px] uppercase tracking-widest text-indigo-200 font-semibold">Live — Your Jurisdiction</span>
+              </div>
+              <div className="font-bold text-xl sm:text-2xl leading-tight">{zones.map(z => z.name).join(' · ') || 'No zones assigned'}</div>
+              <div className="text-indigo-200 text-xs mt-1">{zones.length} zone(s) · {tpsList.length} Traffic Police Station(s)</div>
             </div>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex flex-wrap gap-2">
               {zones.map(z => (
-                <Badge key={z.id} className="text-white" style={{ backgroundColor: zoneColorMap[z.id] }}>{z.name}</Badge>
+                <span key={z.id} className="px-3 py-1 rounded-full text-xs font-semibold border border-white/20 backdrop-blur-sm" style={{ backgroundColor: zoneColorMap[z.id] + 'cc' }}>{z.name}</span>
               ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── KPI stat strip ── */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {[
+            { label: 'Active Jams', value: stats?.active || 0, icon: <Siren className="h-4 w-4" />, accent: 'border-red-400 bg-red-50 text-red-700' },
+            { label: 'Critical',    value: stats?.critical || 0, icon: <AlertTriangle className="h-4 w-4" />, accent: 'border-red-300 bg-red-50 text-red-600' },
+            { label: 'High',        value: stats?.high || 0,     icon: <AlertTriangle className="h-4 w-4" />, accent: 'border-orange-300 bg-orange-50 text-orange-600' },
+            { label: 'Medium',      value: stats?.medium || 0,   icon: <Activity className="h-4 w-4" />,      accent: 'border-amber-300 bg-amber-50 text-amber-600' },
+            { label: 'Cleared',     value: stats?.cleared || 0,  icon: <CheckCircle2 className="h-4 w-4" />, accent: 'border-emerald-300 bg-emerald-50 text-emerald-700' },
+            { label: 'Total',       value: stats?.total || 0,    icon: <BarChart3 className="h-4 w-4" />,    accent: 'border-slate-300 bg-white text-slate-700' },
+          ].map(s => (
+            <div key={s.label} className={`rounded-xl border-2 p-3 flex flex-col gap-1 shadow-sm ${s.accent}`}>
+              <div className="flex items-center justify-between">{s.icon}<span className="text-[10px] font-medium opacity-70">{s.label}</span></div>
+              <div className="text-2xl font-extrabold leading-none">{s.value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Filter bar ── */}
+        <Card className="border-0 shadow-sm bg-white/80 backdrop-blur">
+          <CardContent className="p-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <div className="flex items-center gap-2 text-sm font-medium text-indigo-700 shrink-0">
+                <Building2 className="h-4 w-4" /> Filter
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2 flex-1">
+                <Select value={tpsFilter} onValueChange={setTpsFilter}>
+                  <SelectTrigger className="w-full sm:w-72"><SelectValue placeholder="All Traffic PS" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Traffic PS</SelectItem>
+                    {tpsList.map(t => <SelectItem key={t.id} value={t.id}>{t.name} ({t.zoneName})</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Select value={range} onValueChange={setRange}>
+                  <SelectTrigger className="w-full sm:w-44"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="live">Live / Real-Time</SelectItem>
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="24h">Last 24 Hours</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <div className="grid md:grid-cols-6 gap-3">
-          <StatCard label="Active Jams" value={stats?.active || 0} icon={<Siren />} color="red" />
-          <StatCard label="Critical" value={stats?.critical || 0} icon={<AlertTriangle />} color="red" />
-          <StatCard label="High" value={stats?.high || 0} icon={<AlertTriangle />} color="amber" />
-          <StatCard label="Medium" value={stats?.medium || 0} icon={<Activity />} color="amber" />
-          <StatCard label="Cleared" value={stats?.cleared || 0} icon={<CheckCircle2 />} color="emerald" />
-          <StatCard label="Total" value={stats?.total || 0} icon={<BarChart3 />} color="slate" />
-        </div>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <div>
-              <CardTitle className="text-base flex items-center gap-2"><Building2 className="h-5 w-5 text-indigo-600" /> Traffic Police Stations under your zones</CardTitle>
-              <CardDescription>Polygons rendered on map · Filter incidents below</CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <Select value={tpsFilter} onValueChange={setTpsFilter}>
-                <SelectTrigger className="w-60"><SelectValue placeholder="All Traffic PS" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Traffic PS</SelectItem>
-                  {tpsList.map(t => <SelectItem key={t.id} value={t.id}>{t.name} ({t.zoneName})</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Select value={range} onValueChange={setRange}>
-                <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="live">Live / Real-Time</SelectItem>
-                  <SelectItem value="today">Today</SelectItem>
-                  <SelectItem value="24h">Last 24 Hours</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardHeader>
-        </Card>
-
-        <div className="grid lg:grid-cols-[1fr,420px] gap-4 h-[calc(100vh-400px)] min-h-[560px]">
-          <div className="rounded-xl overflow-hidden border shadow-sm relative">
+        {/* ── Map + sidebar ── */}
+        <div className="grid lg:grid-cols-[1fr,420px] gap-4">
+          <div className="rounded-xl overflow-hidden border shadow-sm relative h-[50vw] min-h-[320px] max-h-[600px] lg:h-[calc(100vh-420px)] lg:min-h-[500px] lg:max-h-none">
             <GoogleMapView apiKey={GMAPS_KEY} incidents={incidents} polygons={tpsPolygons} hotspots={visibleDcpTrafficHotspots} focus={focus} onIncidentClick={onCardClick} onHotspotClick={selectDcpTrafficGrid} center={mapCenter} zoom={11} fitToPolygons />
-            <div className="absolute top-3 left-3 z-10 bg-white/95 rounded-lg px-3 py-2 shadow text-xs flex flex-wrap items-center gap-3 max-w-md">
-              <span className="font-semibold">Google Traffic Layer</span>
-              {zones.map(z => <span key={z.id} className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm border" style={{ backgroundColor: zoneColorMap[z.id] + '33', borderColor: zoneColorMap[z.id] }} />{z.name}</span>)}
+            <div className="absolute top-3 left-3 z-10 bg-white/95 backdrop-blur rounded-lg px-3 py-2 shadow text-xs flex flex-wrap items-center gap-2 max-w-[calc(100%-24px)]">
+              <span className="font-semibold text-slate-700">Traffic Layer</span>
+              {zones.map(z => <span key={z.id} className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm border" style={{ backgroundColor: zoneColorMap[z.id] + '44', borderColor: zoneColorMap[z.id] }} /><span className="text-slate-600">{z.name}</span></span>)}
             </div>
           </div>
 
-          <div className="overflow-auto space-y-3">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Traffic Scan Summary</CardTitle>
-                <CardDescription>Live Google traffic analytics across DCP assigned areas</CardDescription>
+          <div className="space-y-3 overflow-auto lg:max-h-[calc(100vh-220px)]">
+            {/* ── Premium scan summary ── */}
+            <div className="rounded-xl border bg-gradient-to-br from-slate-900 to-indigo-950 text-white p-4 space-y-3 shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs text-indigo-300 uppercase tracking-wider font-semibold">Traffic Scan</div>
+                  <div className="font-bold mt-0.5">{tpsFilter === 'all' ? `${tpsList.length} Police Stations` : tpsList.find(t => t.id === tpsFilter)?.name}</div>
+                </div>
+                <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                  dcpLiveTrafficStatus === 'Heavy congestion' ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
+                  dcpLiveTrafficStatus === 'Moderate congestion' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                  dcpLiveTrafficStatus === 'Clear traffic' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                  'bg-slate-500/20 text-slate-400 border border-slate-500/30'}`}>{dcpLiveTrafficStatus}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { v: dcpTrafficRatios.length, l: 'Scanned' },
+                  { v: `+${dcpAvgDelayPct}%`, l: 'Avg Delay' },
+                  { v: `+${dcpMaxDelayPct}%`, l: 'Max Delay' },
+                ].map(s => (
+                  <div key={s.l} className="rounded-lg bg-white/5 border border-white/10 p-2 text-center">
+                    <div className="text-lg font-extrabold">{s.v}</div>
+                    <div className="text-[10px] text-indigo-300">{s.l}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-lg bg-red-500/15 border border-red-500/20 p-2 text-center">
+                  <div className="text-xl font-extrabold text-red-300">{dcpHeavyCount}</div>
+                  <div className="text-[10px] text-red-400">Heavy</div>
+                </div>
+                <div className="rounded-lg bg-amber-500/15 border border-amber-500/20 p-2 text-center">
+                  <div className="text-xl font-extrabold text-amber-300">{dcpModerateCount}</div>
+                  <div className="text-[10px] text-amber-400">Moderate</div>
+                </div>
+                <div className="rounded-lg bg-emerald-500/15 border border-emerald-500/20 p-2 text-center">
+                  <div className="text-xl font-extrabold text-emerald-300">{dcpClearCount}</div>
+                  <div className="text-[10px] text-emerald-400">Clear</div>
+                </div>
+              </div>
+              <Button size="sm" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white border-0" onClick={scanDcpTrafficGrid} disabled={trafficScanning}>
+                {trafficScanning ? `Scanning ${trafficScanProgress.done}/${trafficScanProgress.total}…` : '🔍 Scan DCP Traffic Areas'}
+              </Button>
+              <div className="text-[10px] text-indigo-400 text-center">Last scan: {trafficLastScanAt ? trafficLastScanAt.toLocaleString('en-IN') : 'Not scanned yet'}</div>
+            </div>
+            {/* ── Traffic Locations card ── */}
+            <Card className="shadow-sm border-0 bg-white">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <CardTitle className="text-sm font-semibold text-slate-700">Traffic Locations</CardTitle>
+                  <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-medium">{visibleDcpTrafficHotspots.length} location(s)</span>
+                </div>
+                <div className="grid grid-cols-3 gap-1 rounded-lg bg-slate-100 p-1 mt-2">
+                  <Button size="sm" className="w-full text-xs" variant={trafficScanFilter === 'all' ? undefined : 'ghost'} onClick={() => setTrafficScanFilter('all')}>All</Button>
+                  <Button size="sm" className="w-full text-xs" variant={trafficScanFilter === 'heavy' ? undefined : 'ghost'} onClick={() => setTrafficScanFilter('heavy')}>🔴 Heavy</Button>
+                  <Button size="sm" className="w-full text-xs" variant={trafficScanFilter === 'moderate' ? undefined : 'ghost'} onClick={() => setTrafficScanFilter('moderate')}>🟡 Mod</Button>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="rounded-lg border bg-slate-50 p-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="text-xs text-slate-500">Mapped Areas</div>
-                      <div className="text-sm font-semibold">{tpsFilter === 'all' ? `${tpsList.length} Traffic Police Stations` : tpsList.find(t => t.id === tpsFilter)?.name}</div>
-                      <div className="text-xs text-slate-500">{zones.map(z => z.name).join(' · ') || '-'}</div>
-                    </div>
-                    <Badge className={dcpLiveTrafficStatus === 'Heavy congestion' ? 'bg-red-600' : dcpLiveTrafficStatus === 'Moderate congestion' ? 'bg-amber-500' : dcpLiveTrafficStatus === 'Clear traffic' ? 'bg-emerald-600' : 'bg-slate-500'}>
-                      {dcpLiveTrafficStatus}
-                    </Badge>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 mt-3 text-center text-xs">
-                    <div><div className="font-bold text-slate-800">{dcpTrafficRatios.length}</div><div className="text-slate-500">Grids scanned</div></div>
-                    <div><div className="font-bold text-slate-800">+{dcpAvgDelayPct}%</div><div className="text-slate-500">Avg delay</div></div>
-                    <div><div className="font-bold text-slate-800">+{dcpMaxDelayPct}%</div><div className="text-slate-500">Max delay</div></div>
-                  </div>
-                  <div className="text-[10px] text-slate-400 mt-2">Last scan: {trafficLastScanAt ? trafficLastScanAt.toLocaleString('en-IN') : 'Not scanned yet'}</div>
-                </div>
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="rounded-lg border bg-red-50 p-2"><div className="text-lg font-bold text-red-700">{dcpHeavyCount}</div><div className="text-[10px] text-red-700">Heavy</div></div>
-                  <div className="rounded-lg border bg-amber-50 p-2"><div className="text-lg font-bold text-amber-700">{dcpModerateCount}</div><div className="text-[10px] text-amber-700">Moderate</div></div>
-                  <div className="rounded-lg border bg-emerald-50 p-2"><div className="text-lg font-bold text-emerald-700">{dcpClearCount}</div><div className="text-[10px] text-emerald-700">Clear</div></div>
-                </div>
-                <Button size="sm" variant="outline" className="w-full" onClick={scanDcpTrafficGrid} disabled={trafficScanning}>
-                  {trafficScanning ? `Scanning ${trafficScanProgress.done}/${trafficScanProgress.total}` : '🔍 Scan DCP Traffic Areas'}
-                </Button>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <CardTitle className="text-base">Traffic Locations</CardTitle>
-                    <div className="text-xs text-slate-600 shrink-0">{visibleDcpTrafficHotspots.length} location(s)</div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-1 rounded bg-slate-50 p-1">
-                    <Button size="sm" className="w-full" variant={trafficScanFilter === 'all' ? undefined : 'ghost'} onClick={() => setTrafficScanFilter('all')}>All</Button>
-                    <Button size="sm" className="w-full" variant={trafficScanFilter === 'heavy' ? undefined : 'ghost'} onClick={() => setTrafficScanFilter('heavy')}>Heavy</Button>
-                    <Button size="sm" className="w-full" variant={trafficScanFilter === 'moderate' ? undefined : 'ghost'} onClick={() => setTrafficScanFilter('moderate')}>Moderate</Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-2 max-h-72 overflow-auto">
+              <CardContent className="space-y-2 max-h-64 overflow-y-auto pr-1">
                 {visibleDcpTrafficHotspots.map(c => (
-                  <div key={c.id} className="rounded-lg border bg-white px-3 py-2 text-xs space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-semibold">{c.name}</span>
-                      <Badge variant={c.priority === 1 ? 'destructive' : c.priority === 2 ? 'secondary' : 'outline'} className="text-[10px]">{c.priorityLabel}</Badge>
-                      <Badge className={`text-[10px] ${c.status === 'heavy' ? 'bg-red-600' : c.status === 'moderate' ? 'bg-amber-500' : c.status === 'clear' ? 'bg-emerald-600' : 'bg-slate-500'}`}>{c.statusLabel}</Badge>
+                  <div key={c.id} className={`rounded-xl border p-2.5 text-xs space-y-1.5 transition-colors hover:bg-slate-50 ${c.status === 'heavy' ? 'border-red-200 bg-red-50/50' : c.status === 'moderate' ? 'border-amber-200 bg-amber-50/50' : 'border-emerald-200 bg-emerald-50/30'}`}>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="font-semibold text-slate-800 truncate flex-1">{c.name}</span>
+                      <Badge className={`text-[10px] shrink-0 ${c.status === 'heavy' ? 'bg-red-600' : c.status === 'moderate' ? 'bg-amber-500' : c.status === 'clear' ? 'bg-emerald-600' : 'bg-slate-500'}`}>{c.statusLabel}</Badge>
                     </div>
-                    <div className="text-slate-500">{c.tpsName} · {c.zoneName}</div>
-                    <div className="text-slate-500">{c.lat.toFixed(4)}, {c.lng.toFixed(4)}{c.trafficDensity !== null ? ` · +${c.trafficDensity}% delay` : ''}</div>
-                    {c.trafficDensity !== null && <div className="h-1.5 bg-slate-100 rounded overflow-hidden"><div className={`h-full ${c.status === 'heavy' ? 'bg-red-600' : c.status === 'moderate' ? 'bg-amber-500' : 'bg-emerald-600'}`} style={{ width: `${Math.min(100, c.trafficDensity * 1.5)}%` }} /></div>}
-                    <div className="grid grid-cols-3 gap-2">
-                      <Button size="sm" variant="outline" onClick={() => selectDcpTrafficGrid(c)}>Zoom</Button>
-                      <Button size="sm" variant="outline" onClick={() => window.open(getMapUrl(c.lat, c.lng), '_blank')}><MapPin className="h-3 w-3" /></Button>
-                      <Button size="sm" variant="outline" onClick={() => window.open(getNavUrl(c.lat, c.lng), '_blank')}><Navigation className="h-3 w-3" /></Button>
+                    <div className="text-slate-500 text-[11px]">{c.tpsName} · {c.zoneName}</div>
+                    {c.trafficDensity !== null && (
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden"><div className={`h-full rounded-full ${c.status === 'heavy' ? 'bg-red-500' : c.status === 'moderate' ? 'bg-amber-400' : 'bg-emerald-500'}`} style={{ width: `${Math.min(100, c.trafficDensity * 1.5)}%` }} /></div>
+                        <span className="font-bold text-slate-700 shrink-0">+{c.trafficDensity}%</span>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-3 gap-1">
+                      <Button size="sm" variant="outline" className="text-[10px] h-6 px-1" onClick={() => selectDcpTrafficGrid(c)}>Zoom</Button>
+                      <Button size="sm" variant="outline" className="text-[10px] h-6 px-1" onClick={() => window.open(getMapUrl(c.lat, c.lng), '_blank')}><MapPin className="h-3 w-3" /></Button>
+                      <Button size="sm" variant="outline" className="text-[10px] h-6 px-1" onClick={() => window.open(getNavUrl(c.lat, c.lng), '_blank')}><Navigation className="h-3 w-3" /></Button>
                     </div>
                   </div>
                 ))}
-                {!visibleDcpTrafficHotspots.length && <div className="text-sm text-slate-500 p-4 text-center bg-white border rounded-lg">Run traffic scan to show live DCP area locations.</div>}
+                {!visibleDcpTrafficHotspots.length && (
+                  <div className="flex flex-col items-center py-6 text-slate-400 gap-1">
+                    <Radio className="h-6 w-6 opacity-30" />
+                    <p className="text-xs">Run scan to see live locations</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
-            <div className="text-sm text-slate-600 flex items-center justify-between sticky top-0 bg-slate-50 py-1 z-10">
-              <span>{incidents.length} incident(s) in your jurisdiction</span>
-              {selected && <Button size="sm" variant="ghost" onClick={() => { setSelected(null); setFocus(null) }}>Clear focus</Button>}
+
+            {/* ── Incidents header ── */}
+            <div className="flex items-center justify-between sticky top-0 bg-slate-50 py-1.5 z-10 rounded-lg px-1">
+              <span className="text-xs font-semibold text-slate-600">{incidents.length} incident(s) in your jurisdiction</span>
+              {selected && <Button size="sm" variant="ghost" className="text-xs h-7" onClick={() => { setSelected(null); setFocus(null) }}>Clear focus</Button>}
             </div>
             {incidents.length === 0 && (
-              <div className="text-sm text-slate-500 p-6 text-center bg-white border rounded-lg">No incidents match current filter.</div>
+              <div className="flex flex-col items-center py-8 text-slate-400 gap-2 border rounded-xl bg-white">
+                <Siren className="h-8 w-8 opacity-20" />
+                <p className="text-sm">No incidents match current filter</p>
+              </div>
             )}
             {incidents.map(i => {
               const lat = i.location.coordinates[1], lng = i.location.coordinates[0]
               const isSelected = selected?.id === i.id
               const tps = tpsList.find(t => t.id === i.psId || t.id === i.tpsId)
+              const sevLeft = { critical: 'border-l-red-600', high: 'border-l-orange-500', medium: 'border-l-amber-400', low: 'border-l-emerald-500' }[i.severity] || 'border-l-slate-300'
               return (
-                <div key={i.id} className={`border-2 rounded-lg p-3 ${sevBg(i.severity)} ${isSelected ? 'ring-2 ring-indigo-500' : ''} cursor-pointer`} onClick={() => onCardClick(i)}>
+                <div key={i.id} className={`border border-l-4 ${sevLeft} rounded-xl p-3 bg-white shadow-sm cursor-pointer transition-shadow hover:shadow-md ${isSelected ? 'ring-2 ring-indigo-400' : ''}`} onClick={() => onCardClick(i)}>
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <div className="font-bold">{i.areaName || i.address}</div>
-                      <div className="text-xs text-slate-600">{tps?.name || 'Unknown PS'} · {tps?.zoneName || ''}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-sm truncate">{i.areaName || i.address}</div>
+                      <div className="text-xs text-slate-500 mt-0.5">{tps?.name || 'Unknown PS'}{tps?.zoneName ? ` · ${tps.zoneName}` : ''}</div>
                     </div>
-                    <Badge className={`${sevBadge(i.severity)} text-white`}>{(i.severity || 'medium').toUpperCase()}</Badge>
+                    <Badge className={`${sevBadge(i.severity)} text-white shrink-0 text-[10px]`}>{(i.severity || 'medium').toUpperCase()}</Badge>
                   </div>
-                  <div className="grid grid-cols-2 gap-1 text-xs mt-2 text-slate-700">
-                    <div>Delay: <strong>{i.estimatedDelayMin ?? '-'} min</strong></div>
-                    <div>Queue: <strong>{i.queueLengthM ? (i.queueLengthM > 1000 ? (i.queueLengthM/1000).toFixed(1)+' km' : i.queueLengthM+' m') : '-'}</strong></div>
-                    <div>Status: <Badge variant={i.status === 'cleared' ? 'default' : i.status === 'dispatched' ? 'secondary' : 'destructive'} className="text-[10px]">{i.status}</Badge></div>
-                    <div className="text-slate-500">{new Date(i.createdAt).toLocaleTimeString()}</div>
-                    <div className="col-span-2 text-[10px] font-mono text-slate-400">{lat.toFixed(4)}, {lng.toFixed(4)}</div>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs mt-2 text-slate-600">
+                    <div>Delay: <strong>{i.estimatedDelayMin ?? '—'} min</strong></div>
+                    <div>Queue: <strong>{i.queueLengthM ? (i.queueLengthM > 1000 ? (i.queueLengthM/1000).toFixed(1)+' km' : i.queueLengthM+' m') : '—'}</strong></div>
+                    <div className="flex items-center gap-1">Status: <Badge variant={i.status === 'cleared' ? 'default' : i.status === 'dispatched' ? 'secondary' : 'destructive'} className="text-[10px]">{i.status}</Badge></div>
+                    <div className="text-slate-400">{new Date(i.createdAt).toLocaleTimeString()}</div>
                   </div>
-                  <div className="flex gap-2 mt-2">
-                    <Button size="sm" variant="outline" className="flex-1" onClick={(e) => { e.stopPropagation(); onCardClick(i) }}>
+                  <div className="flex gap-2 mt-2.5">
+                    <Button size="sm" variant="outline" className="flex-1 h-7 text-xs" onClick={(e) => { e.stopPropagation(); onCardClick(i) }}>
                       <Eye className="h-3 w-3 mr-1" /> Zoom
                     </Button>
-                    <Button size="sm" variant="outline" className="flex-1" onClick={(e) => { e.stopPropagation(); openInGoogleMaps(i) }}>
-                      <ExternalLink className="h-3 w-3 mr-1" /> Open in Maps
+                    <Button size="sm" variant="outline" className="flex-1 h-7 text-xs" onClick={(e) => { e.stopPropagation(); openInGoogleMaps(i) }}>
+                      <ExternalLink className="h-3 w-3 mr-1" /> Maps
                     </Button>
                   </div>
                 </div>
@@ -2198,43 +2317,55 @@ function DCPDashboard({ user }) {
 
       <TabsContent value="analytics">
         <div className="grid md:grid-cols-2 gap-4">
-          <Card>
-            <CardHeader><CardTitle className="text-base">Hourly Incidents (Last 24h)</CardTitle><CardDescription>Across your assigned zones only</CardDescription></CardHeader>
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2"><BarChart3 className="h-4 w-4 text-indigo-600" /> Hourly Incidents (Last 24h)</CardTitle>
+              <CardDescription>Across your assigned zones only</CardDescription>
+            </CardHeader>
             <CardContent>
-              {analytics.hourly.length === 0 && <p className="text-sm text-slate-500">No data yet.</p>}
-              <div className="space-y-1">
-                {analytics.hourly.map(h => {
-                  const max = Math.max(...analytics.hourly.map(x => Number(x.count)))
-                  const pct = Math.max(5, (Number(h.count) / max) * 100)
-                  return (
-                    <div key={h.hour} className="flex items-center gap-2 text-xs">
-                      <div className="w-12 text-right font-mono">{String(h.hour).padStart(2, '0')}:00</div>
-                      <div className="flex-1 bg-slate-100 rounded h-5 relative overflow-hidden">
-                        <div className="h-full bg-indigo-500" style={{ width: `${pct}%` }} />
-                        <div className="absolute inset-0 flex items-center px-2 font-medium text-slate-700">{h.count}</div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+              {analytics.hourly.length === 0
+                ? <div className="flex flex-col items-center justify-center py-10 text-slate-400 gap-2"><BarChart3 className="h-8 w-8 opacity-30" /><p className="text-sm">No data yet</p></div>
+                : <div className="space-y-1.5">
+                    {analytics.hourly.map(h => {
+                      const max = Math.max(...analytics.hourly.map(x => Number(x.count)))
+                      const pct = Math.max(4, (Number(h.count) / Math.max(max, 1)) * 100)
+                      const color = Number(h.count) >= max * 0.7 ? '#ef4444' : Number(h.count) >= max * 0.4 ? '#f59e0b' : '#6366f1'
+                      return (
+                        <div key={h.hour} className="flex items-center gap-2 text-xs">
+                          <div className="w-12 text-right font-mono text-slate-500">{String(h.hour).padStart(2, '0')}:00</div>
+                          <div className="flex-1 bg-slate-100 rounded-full h-5 relative overflow-hidden">
+                            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: color }} />
+                            <div className="absolute inset-0 flex items-center px-2.5 font-semibold text-slate-700">{h.count}</div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+              }
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader><CardTitle className="text-base">PS-wise Traffic Analysis</CardTitle></CardHeader>
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2"><Building2 className="h-4 w-4 text-indigo-600" /> PS-wise Traffic Analysis</CardTitle>
+            </CardHeader>
             <CardContent>
-              {analytics.psWise.length === 0 && <p className="text-sm text-slate-500">No data yet.</p>}
-              <table className="w-full text-sm">
-                <thead><tr className="text-left text-xs text-slate-500"><th>Traffic PS</th><th>Incidents</th><th>Avg Delay</th></tr></thead>
-                <tbody>
-                  {analytics.psWise.map(p => (
-                    <tr key={p.ps_id} className="border-t">
-                      <td className="py-2 font-medium">{p.ps_name || p.ps_id}</td>
-                      <td>{p.count}</td>
-                      <td>{p.avg_delay ? Number(p.avg_delay).toFixed(1) + ' min' : '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {analytics.psWise.length === 0
+                ? <div className="flex flex-col items-center justify-center py-10 text-slate-400 gap-2"><Building2 className="h-8 w-8 opacity-30" /><p className="text-sm">No data yet</p></div>
+                : <div className="overflow-x-auto">
+                    <table className="w-full text-sm min-w-[280px]">
+                      <thead><tr className="text-left text-xs text-slate-500 border-b"><th className="pb-2">Traffic PS</th><th className="pb-2">Incidents</th><th className="pb-2">Avg Delay</th></tr></thead>
+                      <tbody>
+                        {analytics.psWise.map(p => (
+                          <tr key={p.ps_id} className="border-b last:border-0">
+                            <td className="py-2 font-medium">{p.ps_name || p.ps_id}</td>
+                            <td><Badge variant="outline">{p.count}</Badge></td>
+                            <td className="text-slate-600">{p.avg_delay ? Number(p.avg_delay).toFixed(1) + ' min' : '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+              }
             </CardContent>
           </Card>
         </div>
@@ -2359,14 +2490,15 @@ function FamilyManagement({ user }) {
   return (
     <div className="space-y-3">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
             <CardTitle className="flex items-center gap-2"><Heart className="h-5 w-5 text-pink-600" /> Senior Citizen Protection Program</CardTitle>
             <CardDescription>{families.length} families · {assignments.length} active assignments{user.role === 'sho' && assignedTps ? ` · ${assignedTps.name}` : ''}</CardDescription>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Select value={filter} onValueChange={setFilter}>
-              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-44"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Risk Levels</SelectItem>
                 <SelectItem value="low">Low Risk</SelectItem>
@@ -2375,7 +2507,8 @@ function FamilyManagement({ user }) {
                 <SelectItem value="emergency">Emergency Monitoring</SelectItem>
               </SelectContent>
             </Select>
-            <Button onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> Add Family</Button>
+            <Button className="w-full sm:w-auto" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> Add Family</Button>
+          </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -2774,48 +2907,91 @@ function AdminDashboard({ user }) {
 
   return (
     <Tabs defaultValue="overview" className="space-y-4">
-      <TabsList>
-        <TabsTrigger value="overview"><BarChart3 className="h-4 w-4 mr-1" /> Overview</TabsTrigger>
-        <TabsTrigger value="zones"><MapPin className="h-4 w-4 mr-1" /> Zones</TabsTrigger>
-        <TabsTrigger value="tps"><Building2 className="h-4 w-4 mr-1" /> Traffic PS</TabsTrigger>
-        <TabsTrigger value="map"><MapPin className="h-4 w-4 mr-1" /> Live Map</TabsTrigger>
-        <TabsTrigger value="attendance"><Clock className="h-4 w-4 mr-1" /> Attendance</TabsTrigger>
-        <TabsTrigger value="leaderboard"><Trophy className="h-4 w-4 mr-1" /> Leaderboard</TabsTrigger>
-        <TabsTrigger value="incidents"><Siren className="h-4 w-4 mr-1" /> Incidents</TabsTrigger>
-        <TabsTrigger value="activities"><ImageIcon className="h-4 w-4 mr-1" /> Activities</TabsTrigger>
-        <TabsTrigger value="users"><Users className="h-4 w-4 mr-1" /> Users</TabsTrigger>
-        <TabsTrigger value="seniors"><Heart className="h-4 w-4 mr-1" /> Seniors</TabsTrigger>
-        <TabsTrigger value="escalations"><Bell className="h-4 w-4 mr-1" /> Escalations</TabsTrigger>
-        <TabsTrigger value="audit"><FileText className="h-4 w-4 mr-1" /> Audit</TabsTrigger>
-      </TabsList>
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-900 text-white shadow-xl">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.35),transparent_60%)]" />
+        <div className="relative px-4 sm:px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.22em] text-indigo-200 font-semibold">Super Admin Command Center</div>
+            <div className="text-lg sm:text-2xl font-extrabold mt-1">Citywide Traffic Operations</div>
+            <div className="text-xs text-indigo-200 mt-1">Unified view of zones, incidents, force attendance and performance</div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-xs w-full sm:w-auto">
+            <div className="rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-center">
+              <div className="text-[10px] text-indigo-200">Active Units</div>
+              <div className="font-bold text-base">{stats?.active || 0}</div>
+            </div>
+            <div className="rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-center">
+              <div className="text-[10px] text-indigo-200">Open Alerts</div>
+              <div className="font-bold text-base">{stats?.open || 0}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto pb-1">
+        <TabsList className="w-max h-auto">
+          <TabsTrigger value="overview" className="text-xs sm:text-sm"><BarChart3 className="h-3.5 w-3.5 mr-1" /><span>Overview</span></TabsTrigger>
+          <TabsTrigger value="zones" className="text-xs sm:text-sm"><MapPin className="h-3.5 w-3.5 mr-1" /><span>Zones</span></TabsTrigger>
+          <TabsTrigger value="tps" className="text-xs sm:text-sm"><Building2 className="h-3.5 w-3.5 mr-1" /><span className="hidden sm:inline">Traffic </span>PS</TabsTrigger>
+          <TabsTrigger value="map" className="text-xs sm:text-sm"><MapPin className="h-3.5 w-3.5 mr-1" /><span>Map</span></TabsTrigger>
+          <TabsTrigger value="attendance" className="text-xs sm:text-sm"><Clock className="h-3.5 w-3.5 mr-1" /><span className="hidden sm:inline">Attendance</span><span className="sm:hidden">Attend.</span></TabsTrigger>
+          <TabsTrigger value="leaderboard" className="text-xs sm:text-sm"><Trophy className="h-3.5 w-3.5 mr-1" /><span className="hidden sm:inline">Leaderboard</span><span className="sm:hidden">Board</span></TabsTrigger>
+          <TabsTrigger value="incidents" className="text-xs sm:text-sm"><Siren className="h-3.5 w-3.5 mr-1" /><span className="hidden sm:inline">Incidents</span><span className="sm:hidden">Inc.</span></TabsTrigger>
+          <TabsTrigger value="activities" className="text-xs sm:text-sm"><ImageIcon className="h-3.5 w-3.5 mr-1" /><span className="hidden sm:inline">Activities</span><span className="sm:hidden">Acts.</span></TabsTrigger>
+          <TabsTrigger value="users" className="text-xs sm:text-sm"><Users className="h-3.5 w-3.5 mr-1" /><span>Users</span></TabsTrigger>
+          <TabsTrigger value="seniors" className="text-xs sm:text-sm"><Heart className="h-3.5 w-3.5 mr-1" /><span>Seniors</span></TabsTrigger>
+          <TabsTrigger value="escalations" className="text-xs sm:text-sm"><Bell className="h-3.5 w-3.5 mr-1" /><span className="hidden sm:inline">Escalations</span><span className="sm:hidden">Esc.</span></TabsTrigger>
+          <TabsTrigger value="audit" className="text-xs sm:text-sm"><FileText className="h-3.5 w-3.5 mr-1" /><span>Audit</span></TabsTrigger>
+        </TabsList>
+      </div>
 
       <TabsContent value="overview" className="space-y-4">
-        <div className="grid md:grid-cols-4 gap-3">
-          <StatCard label="Total Marshals" value={stats?.total || 0} icon={<Users />} color="slate" />
-          <StatCard label="Active Now" value={stats?.active || 0} icon={<Activity />} color="green" />
-          <StatCard label="Online (Ready)" value={stats?.online || 0} icon={<Radio />} color="blue" />
-          <StatCard label="Offline" value={stats?.offline || 0} icon={<LogOut />} color="gray" />
-          <StatCard label="Total Incidents" value={stats?.incidents || 0} icon={<Siren />} color="amber" />
-          <StatCard label="Open / Dispatched" value={stats?.open || 0} icon={<AlertTriangle />} color="red" />
-          <StatCard label="Cleared" value={stats?.cleared || 0} icon={<CheckCircle2 />} color="emerald" />
-          <StatCard label="Zones" value={4} icon={<MapPin />} color="purple" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {[
+            { label: 'Total Marshals', value: stats?.total || 0, icon: <Users className="h-4 w-4" />, tone: 'border-slate-300 bg-slate-50 text-slate-700' },
+            { label: 'Active Now', value: stats?.active || 0, icon: <Activity className="h-4 w-4" />, tone: 'border-emerald-300 bg-emerald-50 text-emerald-700' },
+            { label: 'Online Ready', value: stats?.online || 0, icon: <Radio className="h-4 w-4" />, tone: 'border-blue-300 bg-blue-50 text-blue-700' },
+            { label: 'Offline', value: stats?.offline || 0, icon: <LogOut className="h-4 w-4" />, tone: 'border-slate-300 bg-white text-slate-600' },
+            { label: 'Incidents', value: stats?.incidents || 0, icon: <Siren className="h-4 w-4" />, tone: 'border-amber-300 bg-amber-50 text-amber-700' },
+            { label: 'Open Alerts', value: stats?.open || 0, icon: <AlertTriangle className="h-4 w-4" />, tone: 'border-red-300 bg-red-50 text-red-700' },
+            { label: 'Cleared', value: stats?.cleared || 0, icon: <CheckCircle2 className="h-4 w-4" />, tone: 'border-emerald-300 bg-emerald-50 text-emerald-700' },
+            { label: 'Zones', value: 4, icon: <MapPin className="h-4 w-4" />, tone: 'border-indigo-300 bg-indigo-50 text-indigo-700' },
+          ].map(item => (
+            <div key={item.label} className={`rounded-xl border-2 p-3 shadow-sm ${item.tone}`}>
+              <div className="flex items-center justify-between">
+                {item.icon}
+                <span className="text-[10px] uppercase tracking-wide opacity-80">{item.label}</span>
+              </div>
+              <div className="text-2xl sm:text-3xl font-extrabold mt-2 leading-none">{item.value}</div>
+            </div>
+          ))}
         </div>
-        <Card>
-          <CardHeader><CardTitle className="text-base">Zone Coverage</CardTitle><CardDescription>Live coverage by zone</CardDescription></CardHeader>
-          <CardContent className="grid md:grid-cols-4 gap-3">
+
+        <Card className="border-0 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2"><MapPin className="h-4 w-4 text-indigo-600" /> Zone Coverage</CardTitle>
+            <CardDescription>Live coverage by zone</CardDescription>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {coverageGaps.map(z => (
-              <div key={z.zone} className="border rounded-lg p-3">
-                <div className="font-semibold">{z.zone}</div>
-                <div className="text-3xl font-bold" style={{ color: z.coverage >= 60 ? '#16a34a' : z.coverage >= 30 ? '#f59e0b' : '#dc2626' }}>{z.coverage}%</div>
+              <div key={z.zone} className="rounded-xl border p-3 bg-white">
+                <div className="font-semibold text-slate-700">{z.zone}</div>
+                <div className="text-3xl font-extrabold" style={{ color: z.coverage >= 60 ? '#16a34a' : z.coverage >= 30 ? '#f59e0b' : '#dc2626' }}>{z.coverage}%</div>
                 <div className="text-xs text-slate-500">{z.online + z.active} / {z.total} on duty</div>
+                <div className="mt-2 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full" style={{ width: `${Math.max(4, Number(z.coverage))}%`, backgroundColor: Number(z.coverage) >= 60 ? '#16a34a' : Number(z.coverage) >= 30 ? '#f59e0b' : '#dc2626' }} />
+                </div>
               </div>
             ))}
+            {coverageGaps.length === 0 && (
+              <div className="col-span-full text-sm text-slate-500 text-center py-6">No attendance data available yet.</div>
+            )}
           </CardContent>
         </Card>
       </TabsContent>
 
       <TabsContent value="map">
-        <div className="h-[calc(100vh-200px)] rounded-xl overflow-hidden border">
+        <div className="rounded-xl overflow-hidden border shadow-sm h-[52vw] min-h-[320px] max-h-[620px] lg:h-[calc(100vh-240px)] lg:min-h-[520px] lg:max-h-none">
           <GoogleMapView
             apiKey={GMAPS_KEY}
             incidents={incidents}
@@ -2826,17 +3002,19 @@ function AdminDashboard({ user }) {
       </TabsContent>
 
       <TabsContent value="attendance">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+        <Card className="border-0 shadow-sm">
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle className="text-base">7-Day Attendance Log</CardTitle>
-            <Button size="sm" variant="outline" onClick={() => exportCSV('attendance.csv',
+            <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => exportCSV('attendance.csv',
               ['Name','Role','Zone','Status','Toggles (7d)','Last Seen'],
               attendance.map(a => [a.name, a.role, a.zone, a.status, a.toggleCount, a.lastSeen ? new Date(a.lastSeen).toLocaleString() : '']))
             }><FileText className="h-3 w-3 mr-1" /> Export CSV</Button>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="overflow-auto max-h-[60vh]">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto max-h-[65vh] rounded-lg border">
+              <table className="w-full text-sm min-w-[540px]">
                 <thead className="text-left bg-slate-100 sticky top-0">
                   <tr><th className="p-2">Name</th><th className="p-2">Role</th><th className="p-2">Zone</th><th className="p-2">Status</th><th className="p-2">Toggles (7d)</th><th className="p-2">Last Seen</th></tr>
                 </thead>
@@ -2859,29 +3037,32 @@ function AdminDashboard({ user }) {
       </TabsContent>
 
       <TabsContent value="leaderboard">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+        <Card className="border-0 shadow-sm">
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <CardTitle className="text-base">Performance Rewards</CardTitle>
               <CardDescription>Points based on response time & incidents cleared</CardDescription>
             </div>
-            <Button size="sm" variant="outline" onClick={() => exportCSV('leaderboard.csv',
+            <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => exportCSV('leaderboard.csv',
               ['Rank','Name','Zone','Role','Points'],
               leaderboard.map((m, idx) => [idx + 1, m.name, m.zone, m.role, m.points]))
             }><FileText className="h-3 w-3 mr-1" /> Export CSV</Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
+              {leaderboard.length === 0 && <div className="text-sm text-slate-500 p-6 text-center rounded-lg border bg-white">No leaderboard data yet.</div>}
               {leaderboard.map((m, idx) => (
-                <div key={m.id} className="flex items-center justify-between border rounded-lg p-3">
+                <div key={m.id} className="flex items-center justify-between gap-2 border rounded-xl p-3 bg-white">
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-slate-400' : idx === 2 ? 'bg-amber-700' : 'bg-slate-300 text-slate-700'}`}>{idx + 1}</div>
-                    <div>
-                      <div className="font-medium">{m.name}</div>
-                      <div className="text-xs text-slate-500">{m.zone} · {m.role}</div>
+                    <div className="min-w-0">
+                      <div className="font-medium truncate">{m.name}</div>
+                      <div className="text-xs text-slate-500 truncate">{m.zone} · {m.role}</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 text-amber-600 font-bold"><Trophy className="h-4 w-4" /> {m.points}</div>
+                  <div className="flex items-center gap-1 text-amber-600 font-bold shrink-0"><Trophy className="h-4 w-4" /> {m.points}</div>
                 </div>
               ))}
             </div>
@@ -2890,24 +3071,27 @@ function AdminDashboard({ user }) {
       </TabsContent>
 
       <TabsContent value="incidents">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+        <Card className="border-0 shadow-sm">
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle className="text-base">Incident Report</CardTitle>
-            <Button size="sm" variant="outline" onClick={() => exportCSV('incidents.csv',
+            <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => exportCSV('incidents.csv',
               ['Time','Address','Severity','Level','Status','Delay (min)','Queue (m)'],
               incidents.map(i => [new Date(i.createdAt).toLocaleString(), i.address, i.severity, i.level, i.status, i.estimatedDelayMin || '', i.queueLengthM || '']))
             }><FileText className="h-3 w-3 mr-1" /> Export CSV</Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-2 max-h-[60vh] overflow-auto">
+              {incidents.length === 0 && <div className="text-sm text-slate-500 p-6 text-center rounded-lg border bg-white">No incidents found.</div>}
               {incidents.map(i => (
-                <div key={i.id} className="border rounded p-3 flex justify-between items-start gap-3 text-sm">
-                  {i.photoUrl && <img src={i.photoUrl} alt="" className="w-20 h-20 object-cover rounded flex-shrink-0" />}
-                  <div className="flex-1">
-                    <div className="font-semibold">{i.address}</div>
-                    <div className="text-xs text-slate-500">{new Date(i.createdAt).toLocaleString()} · Severity: {i.severity} · Level {i.level}</div>
+                <div key={i.id} className="border rounded-xl p-3 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 text-sm bg-white">
+                  {i.photoUrl && <img src={i.photoUrl} alt="" className="w-full sm:w-20 h-36 sm:h-20 object-cover rounded flex-shrink-0" />}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold truncate">{i.address}</div>
+                    <div className="text-xs text-slate-500 mt-0.5">{new Date(i.createdAt).toLocaleString()} · Severity: {i.severity} · Level {i.level}</div>
                   </div>
-                  <Badge className={i.status === 'cleared' ? 'bg-green-600' : i.status === 'dispatched' ? 'bg-blue-600' : 'bg-red-600'}>{i.status}</Badge>
+                  <Badge className={`${i.status === 'cleared' ? 'bg-green-600' : i.status === 'dispatched' ? 'bg-blue-600' : 'bg-red-600'} w-fit`}>{i.status}</Badge>
                 </div>
               ))}
             </div>
@@ -2983,10 +3167,12 @@ function App() {
       <main className="max-w-7xl mx-auto p-4">
         {user.role === 'sho' && (
           <Tabs defaultValue="traffic" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="traffic"><Siren className="h-4 w-4 mr-1" /> Traffic</TabsTrigger>
-              <TabsTrigger value="seniors"><Heart className="h-4 w-4 mr-1" /> Senior Citizens</TabsTrigger>
-            </TabsList>
+            <div className="overflow-x-auto pb-1">
+              <TabsList className="w-max h-auto">
+                <TabsTrigger value="traffic" className="text-xs sm:text-sm"><Siren className="h-3.5 w-3.5 mr-1" /> Traffic</TabsTrigger>
+                <TabsTrigger value="seniors" className="text-xs sm:text-sm"><Heart className="h-3.5 w-3.5 mr-1" /><span className="hidden sm:inline">Senior Citizens</span><span className="sm:hidden">Seniors</span></TabsTrigger>
+              </TabsList>
+            </div>
             <TabsContent value="traffic"><SHODashboard user={user} /></TabsContent>
             <TabsContent value="seniors"><FamilyManagement user={user} /></TabsContent>
           </Tabs>
