@@ -16,6 +16,7 @@ export default function GoogleMapView({
   onIncidentClick = null,
   onMapClick = null,
   onHotspotClick = null,
+  onFamilyClick = null,
   dispatchHighlight = null,
   fitToPolygons = false,
 }) {
@@ -28,6 +29,7 @@ export default function GoogleMapView({
   const clickListenerRef = useRef(null)
   const circlesRef = useRef([])
   const infoRef = useRef(null)
+  const fitAppliedRef = useRef(false)
 
   useEffect(() => {
     if (!apiKey || !containerRef.current) return
@@ -103,33 +105,67 @@ export default function GoogleMapView({
     if (!mapRef.current) return
     polysRef.current.forEach(p => p.setMap(null))
     polysRef.current = []
-    polygons.forEach(z => {
+    const resolvedPolygons = polygons.flatMap((z) => {
+      const zoneName = z.zoneName || z.name || 'Zone'
+      const psPolygons = Array.isArray(z.trafficPS)
+        ? z.trafficPS
+          .filter(ps => Array.isArray(ps.polygon) && ps.polygon.length >= 3)
+          .map(ps => ({
+            id: ps.id,
+            name: ps.name || 'Traffic PS',
+            zoneName,
+            polygon: ps.polygon,
+            color: z.color,
+            type: 'traffic_ps',
+          }))
+        : []
+
+      if (psPolygons.length > 0) return psPolygons
+      if (Array.isArray(z.polygon) && z.polygon.length >= 3) {
+        return [{
+          id: z.id,
+          name: z.name || zoneName,
+          zoneName,
+          polygon: z.polygon,
+          color: z.color,
+          type: 'zone',
+        }]
+      }
+      return []
+    })
+
+    resolvedPolygons.forEach(z => {
       if (!z.polygon || z.polygon.length < 3) return
       const poly = new google.maps.Polygon({
         paths: z.polygon.map(p => ({ lat: Number(p[0]), lng: Number(p[1]) })),
         strokeColor: z.color || '#3b82f6',
-        strokeWeight: 2,
+        strokeWeight: z.type === 'traffic_ps' ? 3 : 2,
         fillColor: z.color || '#3b82f6',
         fillOpacity: 0.10,
         map: mapRef.current,
       })
       const center = z.polygon.reduce((acc, p) => ({ lat: acc.lat + Number(p[0]) / z.polygon.length, lng: acc.lng + Number(p[1]) / z.polygon.length }), { lat: 0, lng: 0 })
       poly.addListener('click', () => {
-        infoRef.current.setContent(`<div style="font-family:sans-serif;font-size:13px"><b>${z.name}</b><br/>${z.zoneName || ''}</div>`)
+        const details = []
+        if (z.type === 'traffic_ps') details.push('Traffic PS')
+        if (z.zoneName) details.push(`Zone: ${z.zoneName}`)
+        infoRef.current.setContent(`<div style="font-family:sans-serif;font-size:13px"><b>${z.name}</b>${details.length ? `<br/>${details.join('<br/>')}` : ''}</div>`)
         infoRef.current.setPosition(center)
         infoRef.current.open(mapRef.current)
       })
       polysRef.current.push(poly)
     })
-    if (fitToPolygons && polygons.some(z => z.polygon && z.polygon.length >= 3)) {
+    if (fitToPolygons && !focus && !fitAppliedRef.current && resolvedPolygons.some(z => z.polygon && z.polygon.length >= 3)) {
       const bounds = new google.maps.LatLngBounds()
-      polygons.forEach(z => {
+      resolvedPolygons.forEach(z => {
         if (!z.polygon || z.polygon.length < 3) return
         z.polygon.forEach(p => bounds.extend({ lat: Number(p[0]), lng: Number(p[1]) }))
       })
       mapRef.current.fitBounds(bounds)
+      fitAppliedRef.current = true
     }
-  }, [polygons, fitToPolygons])
+    if (!fitToPolygons) fitAppliedRef.current = false
+  }, [polygons, fitToPolygons, focus])
 
   // Render clickable hotspots (from SHO grid)
   useEffect(() => {
@@ -155,25 +191,6 @@ export default function GoogleMapView({
         fillOpacity: status === 'clear' ? 0.12 : 0.20,
         map: mapRef.current,
       })
-      const titleText = h.trafficDensity !== null && h.trafficDensity !== undefined
-        ? `${statusTitle} · ${delay}% delay`
-        : `Hotspot ${h.id} · ${h.incidentCount} incident(s)`
-      const marker = new google.maps.Marker({
-        position: pos,
-        map: mapRef.current,
-        title: titleText,
-        label: { text: labelText, color: '#fff', fontSize: '12px', fontWeight: '700' },
-        icon: {
-          path: 'M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7z',
-          fillColor: color,
-          fillOpacity: 1,
-          strokeColor: '#ffffff',
-          strokeWeight: 2,
-          scale: 1.5,
-          anchor: new google.maps.Point(12, 22),
-          labelOrigin: new google.maps.Point(12, 9),
-        }
-      })
       const clickFn = () => {
         if (onHotspotClick) onHotspotClick(h)
         infoRef.current.setContent(
@@ -189,9 +206,7 @@ export default function GoogleMapView({
         infoRef.current.open(mapRef.current)
       }
       circle.addListener('click', clickFn)
-      marker.addListener('click', clickFn)
       hotspotsRef.current.push(circle)
-      hotspotsRef.current.push(marker)
     })
     return () => { hotspotsRef.current.forEach(h => h.setMap(null)); hotspotsRef.current = [] }
   }, [hotspots])
@@ -226,7 +241,7 @@ export default function GoogleMapView({
             <div style="font-weight:600;margin-top:4px">${i.address || ''}</div>
             <div>Area: ${i.areaName || '-'}</div>
             <div>Delay: ${i.estimatedDelayMin ?? '-'} min</div>
-            <div>Queue: ${i.queueLengthM ? (i.queueLengthM > 1000 ? (i.queueLengthM/1000).toFixed(1)+' km' : i.queueLengthM+' m') : '-'}</div>
+            <div>Queue: ${i.queueLengthM ? (i.queueLengthM > 1000 ? (i.queueLengthM / 1000).toFixed(1) + ' km' : i.queueLengthM + ' m') : '-'}</div>
             <div style="font-size:11px;color:#666;margin-top:4px">${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)}</div>
           </div>`
         )
@@ -238,34 +253,62 @@ export default function GoogleMapView({
     families.forEach(f => {
       if (f.lat == null || f.lng == null) return
       const pos = { lat: Number(f.lat), lng: Number(f.lng) }
-      const riskColor = { emergency: '#dc2626', high: '#ea580c', medium: '#f59e0b', low: '#22c55e' }[f.riskCategory] || '#22c55e'
+      const riskColorByCategory = {
+        marshal_online: '#16a34a',
+        marshal_offline: '#1f2937',
+        volunteer_online: '#dc2626',
+        volunteer_offline: '#9ca3af',
+        emergency: '#dc2626',
+        high: '#ea580c',
+        medium: '#f59e0b',
+        low: '#22c55e',
+      }
+      const categoryKey = String(f.riskCategory || '').toLowerCase()
+      const roleKey = String(f.role || '').toLowerCase()
+      const statusKey = String(f.status || f.riskCategory || '').toLowerCase()
+      const onlineState = statusKey.includes('offline') ? 'offline' : (statusKey.includes('online') || statusKey.includes('active') ? 'online' : 'online')
+      const derivedKey = roleKey ? `${roleKey}_${onlineState}` : ''
+      const riskColor = riskColorByCategory[categoryKey] || riskColorByCategory[derivedKey] || '#22c55e'
+      const personName = String(f.seniorName || 'Unit')
+      const marshalPoliceUserPath =
+        'M12 2L4 5V9C4 14.25 7.4 18.74 12 20C16.6 18.74 20 14.25 20 9V5L12 2Z ' +
+        'M12 8.2C13.38 8.2 14.5 9.32 14.5 10.7C14.5 12.08 13.38 13.2 12 13.2C10.62 13.2 9.5 12.08 9.5 10.7C9.5 9.32 10.62 8.2 12 8.2Z ' +
+        'M12 14.2C9.9 14.2 8.2 15.25 8.2 16V17H15.8V16C15.8 15.25 14.1 14.2 12 14.2Z ' +
+        'M8.8 8.4L12 6.8L15.2 8.4V9H8.8V8.4Z'
+      const volunteerNoCapPath = 'M12 2C9.8 2 8 3.8 8 6S9.8 10 12 10S16 8.2 16 6S14.2 2 12 2ZM12 11C7.6 11 4 13.5 4 16.5V20H20V16.5C20 13.5 16.4 11 12 11Z'
+      const iconPath = roleKey === 'marshal' ? marshalPoliceUserPath : volunteerNoCapPath
       const marker = new google.maps.Marker({
         position: pos,
         map: mapRef.current,
-        title: f.seniorName,
+        title: personName,
         icon: {
-          path: 'M -8,-8 L 8,-8 L 8,8 L -8,8 Z',
+          // Marshal: police-style badge icon, Volunteer: person icon
+          path: iconPath,
           fillColor: riskColor,
           fillOpacity: 1,
           strokeColor: '#fff',
           strokeWeight: 2,
-          scale: 1.2,
+          scale: 1.15,
+          anchor: new google.maps.Point(20, 25),
         },
       })
       marker.addListener('click', () => {
+        const roleLabel = f.role === 'volunteer' ? 'Volunteer' : f.role === 'marshal' ? 'Marshal' : 'Unit'
+        const statusLabel = f.status ? String(f.status).toUpperCase() : 'UNKNOWN'
         infoRef.current.setContent(
           `<div style="font-family:sans-serif;font-size:13px;max-width:220px;">
-            <div style="font-weight:bold;color:${riskColor}">${f.seniorName} (${f.age || '?'})</div>
-            <div>${f.familyCode} · ${(f.riskCategory || 'low').toUpperCase()} risk</div>
+            <div style="font-weight:bold;color:${riskColor}">${personName}</div>
+            <div>${f.familyCode} · ${roleLabel} · ${statusLabel}</div>
             <div style="font-size:12px;color:#444">${f.address || ''}</div>
             <div style="font-size:11px;color:#666;margin-top:4px">${f.mobile || '-'}</div>
           </div>`
         )
         infoRef.current.open(mapRef.current, marker)
+        if (onFamilyClick) onFamilyClick(f)
       })
       markersRef.current.push(marker)
     })
-  }, [incidents, families])
+  }, [incidents, families, onFamilyClick])
 
   // Focus map on an incident
   useEffect(() => {
